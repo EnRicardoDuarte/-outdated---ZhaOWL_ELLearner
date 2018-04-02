@@ -2,6 +2,7 @@ package ELInterface;
 
 import java.awt.Desktop;
 import java.awt.EventQueue;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
@@ -17,8 +18,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractListModel;
 import javax.swing.DefaultListModel;
+import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
@@ -55,6 +58,8 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner;
 import org.semanticweb.owlapi.util.ShortFormProvider;
 import org.semanticweb.owlapi.util.SimpleShortFormProvider;
 
+import SimpleFunctions.SimpleClass;
+import oracle.ELOracle;
 import tree.ELEdge;
 import tree.ELNode;
 import tree.ELTree;
@@ -86,6 +91,7 @@ public class ELInterface extends JFrame {
 	/**
 	 * Create the frame.
 	 */
+
 	// ************ START FRAME SPECIFIC VARIABLES ********************* //
 	public JList list = new JList();
 	public JTextArea hypoField = new JTextArea();
@@ -102,29 +108,35 @@ public class ELInterface extends JFrame {
 	public Boolean wePlayin = false;
 
 	public JList list_1 = new JList();
-	public JCheckBox saturationBox = new JCheckBox("Allow smart Oracle");
+	public JCheckBox oracleSaturate = new JCheckBox("Oracle saturation");
+	public JCheckBox oracleMerge;
+	public JCheckBox oracleBranch;
+	public JCheckBox learnerSat;
+	public JCheckBox learnerMerge;
+	public JCheckBox learnerDecomp;
+	public JCheckBox learnerUnsat;
+	public JCheckBox learnerBranch;
+
+	public JCheckBox ezBox;
 	public JCheckBox autoBox = new JCheckBox("Auto learn [might take some moments]");
 	public JCheckBox fileLoad;
-	public List<String> auxEx = new ArrayList<String>();
-	public List<String> auxEx2 = new ArrayList<String>();
 	private final JScrollPane scrollPane = new JScrollPane();
 	private final JScrollPane scrollPane_1 = new JScrollPane();
 	private JTextField filePath;
+
 	// ************ END FRAME SPECIFIC VARIABLES ********************* //
 
 	// ************ START OWL SPECIFIC VARIABLES ********************* //.
 	public OWLOntologyManager manager;
 	public ManchesterOWLSyntaxOWLObjectRendererImpl rendering;
+
 	public OWLReasoner reasonerForT;
 	public Set<OWLAxiom> axiomsT;
 	public ELEngine ELQueryEngineForT;
 	public String ontologyFolder;
-	public String ontologyFolderH;
 	public String ontologyName;
 	public File hypoFile;
 	public File newFile;
-	public OWLOntology ontologyH;
-	public ArrayList<OWLSubClassOfAxiom> axiomArray = new ArrayList<OWLSubClassOfAxiom>();
 
 	public ArrayList<String> concepts = new ArrayList<String>();
 	public ArrayList<String> roles = new ArrayList<String>();
@@ -134,13 +146,20 @@ public class ELInterface extends JFrame {
 	public OWLReasoner reasonerForH;
 	public ShortFormProvider shortFormProvider;
 	public Set<OWLAxiom> axiomsH;
+	public String ontologyFolderH;
 	public OWLOntology ontology;
+	public OWLOntology ontologyH;
 	public OWLAxiom lastCE = null;
-	public ArrayList<String> baseConcepts = new ArrayList<String>();
-	public ArrayList<String> allCombinations = new ArrayList<String>();
+	private JLabel averageCI;
+	private JLabel smallestCI;
 
+	public OWLAxiom smallestOne = null;
+	public int smallestSize = 0;
 	// ************ END OWL SPECIFIC VARIABLES ********************* //
-
+	public long timeStart = 0;
+	public long timeEnd = 0;
+	
+	
 	public ELInterface() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 787, 523);
@@ -209,9 +228,16 @@ public class ELInterface extends JFrame {
 		JButton btnNewButton_3 = new JButton("Equivalence query");
 		btnNewButton_3.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				equivalenceCheck();
-				equivCount++;
-				equivalenceCount.setText("Total equivalence queries: " + equivCount);
+				if (ezBox.isSelected() && !win) {
+					if (autoBox.isSelected()) {
+						while (!win)
+							ezEq();
+					} else
+						ezEq();
+				} else {
+					equivalenceCheck();
+					equivalenceCount.setText("Total equivalence queries: " + equivCount);
+				}
 			}
 		});
 		btnNewButton_3.setBounds(10, 269, 171, 23);
@@ -227,10 +253,10 @@ public class ELInterface extends JFrame {
 		entailed.setBounds(191, 49, 121, 14);
 		contentPane.add(entailed);
 
-		memberCount.setBounds(496, 220, 225, 14);
+		memberCount.setBounds(497, 223, 225, 14);
 		contentPane.add(memberCount);
 
-		equivalenceCount.setBounds(496, 244, 225, 14);
+		equivalenceCount.setBounds(497, 248, 225, 14);
 		contentPane.add(equivalenceCount);
 
 		conc2 = new JTextField();
@@ -251,34 +277,30 @@ public class ELInterface extends JFrame {
 				int tCount = 0;
 
 				DefaultListModel counterModel = new DefaultListModel();
-				System.out.println("TBox size = " + ontology.getAxiomCount());
+				System.out.println("TBox size = " + axiomsT.size());
 				int i = 0;
 				for (OWLAxiom axe : ontology.getAxioms()) {
 
+					if(axe.toString().contains("Thing"))
+						continue;
 					if (axe.toString().contains("SubClassOf") || axe.toString().contains("Equivalent")) {
-						// OWLSubClassOfAxiom tempAxe = (OWLSubClassOfAxiom) axe;
-						// axiomArray.add(tempAxe);
-						// System.out.println("TBox CI element #" + (i + 1) + " = " +
-						// axiomArray.get(i));
-						// System.out.println("Axiom is: " + axe);
-						// System.out.println("-----------------");
-
-						// stuff = stuff + fixAxioms(axe) + "\n";
-						// counterModel.addElement(rendering.render((OWLSubClassOfAxiom) axe));
 						System.out.println("TBox CI element #" + (i + 1) + " = " + rendering.render(axe));
 						// tCount++;
 						i++;
 					}
 				}
+				// get sizes of inclusions
+				showCISizes(ontology.getAxioms());
+				// showCISizes(ontologyH.getAxioms());
 
 			}
 		});
-		btnNewButton_4.setBounds(496, 152, 213, 23);
+		btnNewButton_4.setBounds(548, 14, 213, 23);
 		contentPane.add(btnNewButton_4);
 
 		autoBox.setBounds(120, 363, 366, 23);
 		contentPane.add(autoBox);
-		saturationBox.addMouseListener(new MouseAdapter() {
+		oracleSaturate.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 				if (ezBox.isSelected())
@@ -286,8 +308,8 @@ public class ELInterface extends JFrame {
 			}
 		});
 
-		saturationBox.setBounds(120, 337, 192, 23);
-		contentPane.add(saturationBox);
+		oracleSaturate.setBounds(299, 269, 206, 23);
+		contentPane.add(oracleSaturate);
 		scrollPane.setBounds(10, 79, 476, 179);
 
 		contentPane.add(scrollPane);
@@ -330,7 +352,7 @@ public class ELInterface extends JFrame {
 				File file = null;
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					file = fc.getSelectedFile();
-					System.out.println(file.getPath());
+					// System.out.println(file.getPath());
 					filePath.setText(file.getPath());
 
 				}
@@ -352,28 +374,23 @@ public class ELInterface extends JFrame {
 				for (OWLAxiom axe : ontologyH.getAxioms()) {
 
 					if (axe.toString().contains("SubClassOf") || axe.toString().contains("Equivalent")) {
-						OWLSubClassOfAxiom tempAxe = (OWLSubClassOfAxiom) axe;
-						axiomArray.add(tempAxe);
-						// System.out.println("TBox CI element #" + (i + 1) + " = " +
-						// axiomArray.get(i));
-						// System.out.println("Axiom is: " + axe);
-						// System.out.println("-----------------");
 
-						stuff = stuff + fixAxioms(axe) + "\n";
-						System.out.println("TBox CI element #" + (i + 1) + " = " + rendering.render(axe));
-						tCount++;
+						System.out.println("HBox CI element #" + (i + 1) + " = " + rendering.render(axe));
+
 						i++;
 					}
 				}
+				showCISizes(ontologyH.getAxioms());
 			}
 		});
-		btnNewButton_7.setBounds(496, 186, 213, 23);
+		btnNewButton_7.setBounds(548, 45, 213, 23);
 		contentPane.add(btnNewButton_7);
 
 		JButton btnNewButton_8 = new JButton("Try Learner [1 step]");
 		btnNewButton_8.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
 				try {
+					timeStart = System.currentTimeMillis();
 					learner();
 				} catch (Throwable e) {
 					// TODO Auto-generated catch block
@@ -381,7 +398,7 @@ public class ELInterface extends JFrame {
 				}
 			}
 		});
-		btnNewButton_8.setBounds(260, 269, 226, 23);
+		btnNewButton_8.setBounds(535, 269, 226, 23);
 		contentPane.add(btnNewButton_8);
 
 		fileLoad = new JCheckBox("Load From File");
@@ -392,15 +409,100 @@ public class ELInterface extends JFrame {
 		ezBox.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (saturationBox.isSelected())
-					saturationBox.setSelected(false);
+				if (oracleSaturate.isSelected())
+					oracleSaturate.setSelected(false);
 			}
 		});
-		ezBox.setBounds(120, 310, 366, 23);
+		ezBox.setBounds(120, 337, 366, 23);
 		contentPane.add(ezBox);
+
+		oracleMerge = new JCheckBox("Oracle Merge");
+		oracleMerge.setBounds(250, 295, 107, 23);
+		contentPane.add(oracleMerge);
+
+		learnerSat = new JCheckBox("Saturate");
+		learnerSat.setBounds(548, 333, 108, 23);
+		contentPane.add(learnerSat);
+
+		learnerMerge = new JCheckBox("Sibling Merge");
+		learnerMerge.setBounds(548, 363, 97, 23);
+		contentPane.add(learnerMerge);
+
+		learnerDecomp = new JCheckBox("Learner decomposition");
+		learnerDecomp.setBounds(563, 389, 202, 23);
+		contentPane.add(learnerDecomp);
+
+		learnerUnsat = new JCheckBox("Unsaturate");
+		learnerUnsat.setBounds(658, 333, 97, 23);
+		contentPane.add(learnerUnsat);
+
+		learnerBranch = new JCheckBox("Branch");
+		learnerBranch.setBounds(658, 363, 103, 23);
+		contentPane.add(learnerBranch);
+
+		JLabel lblNewLabel_1 = new JLabel("Learner skills");
+		lblNewLabel_1.setBounds(601, 312, 154, 14);
+		contentPane.add(lblNewLabel_1);
+
+		oracleBranch = new JCheckBox("Oracle Branch");
+		oracleBranch.setBounds(359, 295, 127, 23);
+		contentPane.add(oracleBranch);
+
+		averageCI = new JLabel("Target average CI size: 0");
+		averageCI.setBounds(497, 120, 264, 14);
+		contentPane.add(averageCI);
+
+		smallestCI = new JLabel("Target smallest CI size: 0");
+		smallestCI.setBounds(497, 145, 264, 14);
+		contentPane.add(smallestCI);
+
 	}
 
-	public JCheckBox ezBox;
+	public void showCISizes(Set<OWLAxiom> axSet) {
+		int avgSize = 0;
+		int sumSize = 0;
+		smallestSize = 0;
+		smallestOne = null;
+		int totalSize = 0;
+		for (OWLAxiom axe : axSet) {
+
+			String inclusion = rendering.render(axe);
+			inclusion = inclusion.replaceAll(" and ", " ");
+			inclusion = inclusion.replaceAll(" some ", " ");
+			if (axe.toString().contains("SubClassOf"))
+				inclusion = inclusion.replaceAll("SubClassOf", "");
+			else
+				inclusion = inclusion.replaceAll("EquivalentTo", "");
+			inclusion = inclusion.replaceAll(" and ", "");
+			// ==System.out.println(inclusion);
+			String[] arrIncl = inclusion.split(" ");
+			  totalSize = 0;
+			for (int i = 0; i < arrIncl.length; i++)
+				if (arrIncl[i].length() > 1)
+					totalSize++;
+			// for(int i = 0; i < arrIncl.length; i++)
+			// System.out.println(arrIncl[i] + "=====" +arrIncl[i].length());
+
+			// System.out.println(totalSize);
+			if (smallestOne == null) {
+				smallestOne = axe;
+				smallestSize = totalSize;
+			} else {
+				if (smallestSize >= totalSize) {
+					smallestOne = axe;
+					smallestSize = totalSize;
+				}
+			}
+
+			sumSize += totalSize;
+			// System.out.println("Size of : " + rendering.render(axe) + "." + totalSize);
+			// System.out.println("Size of : " + inclusion + "." + totalSize);
+		}
+		System.out.println("Smallest logical axiom: " + rendering.render(smallestOne));
+		System.out.println("Size is: " + smallestSize);
+		System.out.println("Avg: " + sumSize / axSet.size());
+
+	}
 
 	public void getOntologyName() {
 
@@ -425,53 +527,90 @@ public class ELInterface extends JFrame {
 		reasonerForH = createReasoner(ontologyH);
 		ELEngine engineForH = new ELEngine(reasonerForH, shortFormProvider);
 		Set<ELNode> nodes = null;
+
+		int sizeToCheck = 0;
+
+		// @foundSomething
+		// this flag is used to create a new set of elements to iterate over,
+		// in order to find if a proper combination of concepts that a node needs
+		// in order to make the CI valid
+
+		boolean foundSomething = false;
+
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
 			for (ELNode nod : nodes) {
-				TreeSet<OWLClass> onesBreak = new TreeSet<OWLClass>();
-				TreeSet<OWLClass> itOver = new TreeSet<OWLClass>();
-				TreeSet<OWLClass> oldLabel = new TreeSet<OWLClass>();
-				for (OWLClass cl : nod.label)
-					itOver.add(cl);
-				for (OWLClass cl : nod.label)
-					oldLabel.add(cl);
-				for (OWLClass cl : itOver) {
 
-					nod.label = new TreeSet<OWLClass>();
-					nod.label.add(cl);
-					membCount++;
+				while (!foundSomething) {
+					// size of power set
+					sizeToCheck++;
+					// concepts which, when removed, cause CI to be invalid
+					TreeSet<OWLClass> onesBreak = new TreeSet<OWLClass>();
 
-					System.out.println(tree.toDescriptionString());
-					if (ELQueryEngineForT.entailed(ELQueryEngineForT.parseToOWLSubClassOfAxiom(
-							tree.toDescriptionString(),
-							(new ELTree(right)).toDescriptionString())))/*
-																		 * && !engineForH.entailed(ELQueryEngineForT.
-																		 * parseToOWLSubClassOfAxiom(
-																		 * tree.toDescriptionString(), (new
-																		 * ELTree(right)).toDescriptionString())))
-																		 */ {
-						try {
-							addHypothesis(ELQueryEngineForT.getSubClassAxiom(
-									ELQueryEngineForT.parseClassExpression(tree.toDescriptionString()), right));
-							hypoField.setText(showHypothesis());
-							break;
-						} catch (Exception e2) {
-							e2.printStackTrace();
-						}
-						// System.out.println("this one: " + cl);
-						onesBreak.add(cl);
-						// nod.label = new TreeSet<OWLClass>();
-					} else {
-						// System.out.println("This one is bad: " + cl);
+					// set to be used when building a power set of concepts
+					Set<OWLClass> toBuildPS = new HashSet<OWLClass>();
+
+					// populate set
+					for (OWLClass cl : nod.label)
+						toBuildPS.add(cl);
+
+					// set of sets of concepts as power set
+					Set<Set<OWLClass>> conceptSet = new HashSet<Set<OWLClass>>();
+
+					// populate set of sets of concepts
+					// @sizeToCheck is the number of concepts in the set
+					// @sizeToCheck = 1, returns single concepts in power set (ps) [A,B,C,D]
+					// @sizeToCheck = 2, returns ps size 2 of concepts [(A,B), (A,C), (A,D), (B,C),
+					// (B,D), (C,D)]
+					// and so on ...
+					// this is done in order to check which is the minimal concept(s) set required
+					// to satisfy the node
+					// and at the same time, the CI
+					conceptSet = powerSetBySize(toBuildPS, sizeToCheck);
+
+					// loop through concept set
+					for (Set<OWLClass> clSet : conceptSet) {
+
 						nod.label = new TreeSet<OWLClass>();
-						continue;
+
+						for (OWLClass cl : clSet)
+							nod.label.add(cl);
+
+						membCount++;
+
+						// System.out.println(tree.toDescriptionString());
+						if (ELQueryEngineForT.entailed(ELQueryEngineForT
+								.parseToOWLSubClassOfAxiom(tree.toDescriptionString(), (new ELTree(right))
+										.toDescriptionString())))/*
+																	 * && !engineForH.entailed(ELQueryEngineForT.
+																	 * parseToOWLSubClassOfAxiom(
+																	 * tree.toDescriptionString(), (new
+																	 * ELTree(right)).toDescriptionString())))
+																	 */ {
+							foundSomething = true;
+							try {
+								addHypothesis(ELQueryEngineForT.getSubClassAxiom(
+										ELQueryEngineForT.parseClassExpression(tree.toDescriptionString()), right));
+								hypoField.setText(showHypothesis());
+
+							} catch (Exception e2) {
+								e2.printStackTrace();
+							}
+							// System.out.println("this one is good: " + cl);
+
+						} else {
+							// System.out.println("This one is useless: " + cl);
+							// nod.label = new TreeSet<OWLClass>();
+							continue;
+
+						}
 
 					}
 
 				}
-
-				nod.label.addAll(onesBreak);
-
+				// reset power set size to check
+				foundSomething = false;
+				sizeToCheck = 0;
 			}
 		}
 		showQueryCount();
@@ -485,72 +624,140 @@ public class ELInterface extends JFrame {
 		tree = new ELTree(right);
 
 		Set<ELNode> nodes = null;
+		reasonerForH = createReasoner(ontologyH);
+		ELEngine engineH = new ELEngine(reasonerForH, shortFormProvider);
+
+		int sizeToCheck = 0;
+
+		// @foundSomething
+		// this flag is used to create a new set of elements to iterate over,
+		// in order to find if a proper combination of concepts that a node needs
+		// in order to make the CI valid
+
+		boolean foundSomething = false;
+
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
 			for (ELNode nod : nodes) {
-				TreeSet<OWLClass> onesBreak = new TreeSet<OWLClass>();
-				TreeSet<OWLClass> itOver = new TreeSet<OWLClass>();
-				TreeSet<OWLClass> oldLabel = new TreeSet<OWLClass>();
-				for (OWLClass cl : nod.label)
-					itOver.add(cl);
-				for (OWLClass cl : nod.label)
-					oldLabel.add(cl);
-				for (OWLClass cl : itOver) {
 
-					nod.label = new TreeSet<OWLClass>();
-					nod.label.add(cl);
-					membCount++;
-					if (ELQueryEngineForT.entailed(ELQueryEngineForT.parseToOWLSubClassOfAxiom(
-							(new ELTree(left)).toDescriptionString(), tree.toDescriptionString()))) {
-						try {
-							addHypothesis(ELQueryEngineForT.parseToOWLSubClassOfAxiom(
-									(new ELTree(left).toDescriptionString()), tree.toDescriptionString()));
-							hypoField.setText(showHypothesis());
-						} catch (Exception e2) {
-							e2.printStackTrace();
-						}
-						// System.out.println("this one: " + cl);
-						onesBreak.add(cl);
-						// nod.label = new TreeSet<OWLClass>();
-					} else {
-						// System.out.println("This one is bad: " + cl);
+				while (!foundSomething) {
+					// size of power set
+					sizeToCheck++;
+					// concepts which, when removed, cause CI to be invalid
+					TreeSet<OWLClass> onesBreak = new TreeSet<OWLClass>();
+
+					// set to be used when building a power set of concepts
+					Set<OWLClass> toBuildPS = new HashSet<OWLClass>();
+
+					// populate set
+					for (OWLClass cl : nod.label)
+						toBuildPS.add(cl);
+
+					// set of sets of concepts as power set
+					Set<Set<OWLClass>> conceptSet = new HashSet<Set<OWLClass>>();
+
+					// populate set of sets of concepts
+					// @sizeToCheck is the number of concepts in the set
+					// @sizeToCheck = 1, returns single concepts in power set (ps) [A,B,C,D]
+					// @sizeToCheck = 2, returns ps size 2 of concepts [(A,B), (A,C), (A,D), (B,C),
+					// (B,D), (C,D)]
+					// and so on ...
+					// this is done in order to check which is the minimal concept(s) set required
+					// to satisfy the node
+					// and at the same time, the CI
+					conceptSet = powerSetBySize(toBuildPS, sizeToCheck);
+
+					// loop through concept set
+					for (Set<OWLClass> clSet : conceptSet) {
+
 						nod.label = new TreeSet<OWLClass>();
-						continue;
+
+						for (OWLClass cl : clSet)
+							nod.label.add(cl);
+
+						membCount++;
+
+						// System.out.println(tree.toDescriptionString());
+						if (engineH.entailed(ELQueryEngineForT.parseToOWLSubClassOfAxiom(
+								(new ELTree(left)).toDescriptionString(), tree.toDescriptionString()))) {
+							try {
+								addHypothesis(ELQueryEngineForT.parseToOWLSubClassOfAxiom(
+										(new ELTree(left).toDescriptionString()), tree.toDescriptionString()));
+								hypoField.setText(showHypothesis());
+							} catch (Exception e2) {
+								e2.printStackTrace();
+							}
+							// System.out.println("this one: " + cl);
+
+							// nod.label = new TreeSet<OWLClass>();
+						} else {
+							// System.out.println("This one is bad: " + cl);
+							continue;
+
+						}
 
 					}
 
 				}
-
-				nod.label.addAll(onesBreak);
-
+				// reset power set size to check
+				foundSomething = false;
+				sizeToCheck = 0;
 			}
 		}
 		showQueryCount();
 		return ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
 	}
 
+	//public int globalDecompose = 5;
+	
 	public void decompose(OWLClassExpression left, OWLClassExpression right) {
+
+		// decomposition
+		// creates a tree and loops through it to find "hidden" inclusions in it
+		// take tree as: A and B and r.(B and C and s.(D and E))
+		// tree with 2 nodes = [A,B] -r-> [B,C] -s-> [D,E]
+		// decomposition separates tree and recursively checks based on 2 conditions
+		// if non root node [B and C s.(D and E)] has some C' in concept names, such
+		// that [B and C s.(D and E)] subClassOf C'
+		// decompose C'
+		// else if non root node without a branch as T-b [A and B and r.(B and C)] has
+		// some C' in concept names,
+		// such that [A and B and r.(B and C)] subClassOf C'
+		// decompose C'
+		// if C' turns out to be a single node, i.e. no branches in C', add the last
+		// valid subClassOf relation
+		// either [B and C s.(D and E)] subClassOf C' or
+		// [A and B and r.(B and C)] subClassOf C' to the hypothesis
+
 		try {
 			ELTree treeR = null;
+			ELTree treeL = null;
 			boolean leftSide = false;
-			leftSide = checkLeft(ELQueryEngineForT.getSubClassAxiom(left, right));
-			if (leftSide)
-				treeR = new ELTree(left);
-			else
-				treeR = new ELTree(right);
-			if (treeR.nodes.size() == 1) {
+			//leftSide = checkLeft(ELQueryEngineForT.getSubClassAxiom(left, right));
+			
+			treeL = new ELTree(left);
+			if (treeL.nodes.size() == 1 ) {
 				addHypothesis(ELQueryEngineForT.getSubClassAxiom(left, right));
 				hypoField.setText(showHypothesis());
+				//globalDecompose = 5; 
+				return;
+			}else
+				leftSide = true;
+			
+			treeR = new ELTree(right);
+			if (treeR.nodes.size() == 1 ) {
+				addHypothesis(ELQueryEngineForT.getSubClassAxiom(left, right));
+				hypoField.setText(showHypothesis());
+				//globalDecompose = 5;
 				return;
 			}
 			Set<ELNode> nodes = null;
 
-			OWLClassExpression auxEx = ELQueryEngineForT.parseClassExpression(treeR.toDescriptionString());
-			ELTree auxTree = new ELTree(ELQueryEngineForT.parseClassExpression(treeR.toDescriptionString()));
 			reasonerForH = createReasoner(ontologyH);
 			ELEngine engineForH = new ELEngine(reasonerForH, shortFormProvider);
 			List<ELEdge> auxEdges = new LinkedList<ELEdge>();
-
+			if(leftSide)
+				treeR = new ELTree(left);
 			for (int i = 0; i < treeR.maxLevel; i++) {
 				nodes = treeR.getNodesOnLevel(i + 1);
 				for (ELNode nod : nodes) {
@@ -560,11 +767,13 @@ public class ELInterface extends JFrame {
 						continue;
 					for (String cl : concepts) {
 						if (!cl.toString().contains("Thing")) {
+							if(cl.contains("10.0"))
+								continue;
 							// System.out.println("Class: " + rendering.render(cl));
 							OWLAxiom axiom = ELQueryEngineForT.getSubClassAxiom(
 									ELQueryEngineForT.parseClassExpression(nod.toDescriptionString()),
 									ELQueryEngineForT.parseClassExpression(cl));
-							// System.out.println(axiom);
+							//System.out.println(axiom);
 							for (int j = 0; j < nod.edges.size(); j++)
 								auxEdges.add(nod.edges.get(j));
 							// auxEx = ELQueryEngineForT.parseClassExpression(treeR.toDescriptionString());
@@ -572,7 +781,7 @@ public class ELInterface extends JFrame {
 							if (ELQueryEngineForT.entailed(axiom) && !engineForH.entailed(axiom)) {
 								// System.out.println(nod.toDescriptionString());
 								// System.out.println(cl);
-								// System.out.println(" Decompose this: " + axiom);
+								 System.out.println(" Decompose this: " + axiom);
 								decompose(ELQueryEngineForT.parseClassExpression(nod.toDescriptionString()),
 										ELQueryEngineForT.parseClassExpression(cl));
 								return;
@@ -585,7 +794,7 @@ public class ELInterface extends JFrame {
 											&& !engineForH.entailed(ELQueryEngineForT.getSubClassAxiom(
 													ELQueryEngineForT.parseClassExpression(treeR.toDescriptionString()),
 													right))) {
-										System.out.println(treeR.toDescriptionString());
+										// System.out.println(treeR.toDescriptionString());
 										decompose(ELQueryEngineForT.parseClassExpression(treeR.toDescriptionString()),
 												right);
 										return;
@@ -606,6 +815,102 @@ public class ELInterface extends JFrame {
 		return;
 	}
 
+	public OWLClassExpression oracleSiblingMerge(OWLClassExpression left, OWLClassExpression right) throws Exception {
+		// the oracle must do sibling merging (if possible)
+		// on the left hand side
+		ELTree tree = new ELTree(left);
+		Set<ELNode> nodes = null;
+		// System.out.println(tree.toDescriptionString());
+		reasonerForH = createReasoner(ontologyH);
+		ELEngine engineH = new ELEngine(reasonerForH, shortFormProvider);
+		OWLClassExpression oldTree = ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
+		for (int i = 0; i < tree.getMaxLevel(); i++) {
+			nodes = tree.getNodesOnLevel(i + 1);
+			if (!nodes.isEmpty())
+				for (ELNode nod : nodes) {
+					// nod.label.addAll(nod.label);
+					if (!nod.edges.isEmpty() && nod.edges.size() > 1) {
+
+						for (int j = 0; j < nod.edges.size(); j++) {
+							for (int k = 0; k < nod.edges.size(); k++) {
+								if (j == k) {
+									continue;
+								}
+								if (nod.edges.get(j).strLabel.equals(nod.edges.get(k).strLabel)) {
+
+									// System.out.println("they are equal: " +
+									// nod.edges.get(j).node.toDescriptionString() + " AND " +
+									// nod.edges.get(k).node.toDescriptionString());
+									nod.edges.get(j).node.label.addAll(nod.edges.get(k).node.label);
+									if (!nod.edges.get(k).node.edges.isEmpty())
+										nod.edges.get(j).node.edges.addAll(nod.edges.get(k).node.edges);
+									nod.edges.remove(nod.edges.get(k));
+									if (engineH.entailed(ELQueryEngineForT.getSubClassAxiom(left,
+											ELQueryEngineForT.parseClassExpression(tree.toDescriptionString())))) {
+										oldTree = ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
+									} else {
+										tree = new ELTree(oldTree);
+									}
+								}
+							}
+						}
+
+					}
+				}
+		}
+		// System.out.println(tree.getRootNode());
+		return ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
+	}
+
+	public OWLClassExpression learnerSiblingMerge(OWLClassExpression left, OWLClassExpression right) throws Exception {
+
+		/*
+		 * the learner must do sibling merging (if possible) on the right hand side
+		 */
+
+		ELTree tree = new ELTree(right);
+		Set<ELNode> nodes = null;
+		// System.out.println(tree.toDescriptionString());
+		OWLClassExpression oldTree = ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
+		for (int i = 0; i < tree.getMaxLevel(); i++) {
+			nodes = tree.getNodesOnLevel(i + 1);
+			if (!nodes.isEmpty())
+				for (ELNode nod : nodes) {
+					// nod.label.addAll(nod.label);
+					if (!nod.edges.isEmpty() && nod.edges.size() > 1) {
+
+						for (int j = 0; j < nod.edges.size(); j++) {
+							for (int k = 0; k < nod.edges.size(); k++) {
+								if (j == k) {
+									continue;
+								}
+								if (nod.edges.get(j).strLabel.equals(nod.edges.get(k).strLabel)) {
+
+									// System.out.println("they are equal: " +
+									// nod.edges.get(j).node.toDescriptionString() + " AND " +
+									// nod.edges.get(k).node.toDescriptionString());
+									nod.edges.get(j).node.label.addAll(nod.edges.get(k).node.label);
+									if (!nod.edges.get(k).node.edges.isEmpty())
+										nod.edges.get(j).node.edges.addAll(nod.edges.get(k).node.edges);
+									nod.edges.remove(nod.edges.get(k));
+									// check if new merged tree is entailed by T
+									if (ELQueryEngineForT.entailed(ELQueryEngineForT.getSubClassAxiom(left,
+											ELQueryEngineForT.parseClassExpression(tree.toDescriptionString())))) {
+										oldTree = ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
+									} else {
+										tree = new ELTree(oldTree);
+									}
+								}
+							}
+						}
+
+					}
+				}
+		}
+		// System.out.println(tree.getRootNode());
+		return ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
+	}
+
 	public OWLClassExpression branchLeft(OWLClassExpression left, OWLClassExpression right) {
 		try {
 
@@ -613,7 +918,7 @@ public class ELInterface extends JFrame {
 			ELTree treeR = new ELTree(right);
 			Set<ELNode> nodes = null;
 			List<ELEdge> auxEdges = null;
-
+			OWLClassExpression oldTree = ELQueryEngineForT.parseClassExpression(treeL.toDescriptionString());
 			// System.out.println("we branch this one: \n" + treeL.rootNode);
 			for (int i = 0; i < treeL.maxLevel; i++) {
 				nodes = treeL.getNodesOnLevel(i + 1);
@@ -654,81 +959,179 @@ public class ELInterface extends JFrame {
 	public void learner() throws Throwable {
 
 		// we get a counter example from oracle
-		while (!win) {
-			boolean check = equivalenceQuery();
-			if (check) {
-				// victory
+		// while () {
+		if (autoBox.isSelected()) {
+			showQueryCount();
+			hypoField.setText(showHypothesis());
+			if (equivalenceQuery()) {
 				victory();
-			} else {
-				// generate counter example
+				timeEnd = System.currentTimeMillis();
+				System.out.println("Total time (ms): " + (timeEnd - timeStart));
+				return;
+			} else if (ezBox.isSelected())
+				ezEq();
+			else
 				doCE();
+			System.out.println(rendering.render(lastCE));
+			ELTree leftTree = null;
+			ELTree rightTree = null;
+			OWLClassExpression left = null;
+			OWLClassExpression right = null;
+			// lastCE is last counter example provided by oracle, unsaturate and saturate
+			if (lastCE.isOfType(AxiomType.SUBCLASS_OF)) {
+				left = ((OWLSubClassOfAxiom) lastCE).getSubClass();
+				right = ((OWLSubClassOfAxiom) lastCE).getSuperClass();
+			} else {
+				learner();
+				return;
 			}
-			if (!win) {
-				ELTree leftTree = null;
-				ELTree rightTree = null;
-				OWLClassExpression left = null;
-				OWLClassExpression right = null;
-				// lastCE is last counter example provided by oracle, unsaturate and saturate
-				if (lastCE.isOfType(AxiomType.SUBCLASS_OF)) {
-					left = ((OWLSubClassOfAxiom) lastCE).getSubClass();
-					right = ((OWLSubClassOfAxiom) lastCE).getSuperClass();
-				} else {
-					return;
+			lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
+			// check if complex side is left
+			if (checkLeft(lastCE)) {
 
+				// decompose tries to find underlying inclusions inside the left hand side
+				// by recursively breaking the left expression and adding new inclusions to the
+				// hypothesis
+				if (learnerDecomp.isSelected())
+				{
+					//System.out.println("lhs decomp");
+					decompose(left, right);
+				}
+				// branch edges on left side of the inclusion (if possible) to make it logically
+				// stronger (more general)
+				if (learnerBranch.isSelected()) {
+					//System.out.println("lhs branch");
+					left = branchLeft(left, right);
+				}
+
+				// unsaturate removes useless concepts from nodes in the inclusion
+				if (learnerUnsat.isSelected()) {
+					//System.out.println("lhs unsaturate");
+				
+					left = unsaturateLeft(lastCE);
 				}
 				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
-				// check if complex side is left
-				if (checkLeft(lastCE)) {
-
-					// decompose tries to find underlying inclusions inside the left hand side
-					// by recursively breaking the left expression and adding new inclusions to the
-					// hypothesis
-					decompose(left, right);
-
-					// branch edges on left side of the inclusion (if possible) to make it logically
-					// stronger (more general)
-					left = branchLeft(left, right);
-
-					// unsaturate just removes useless concepts in the inclusion
-					left = unsaturateLeft(lastCE);
-					lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
-					lastCE = saturateWithTreeRight(lastCE);
-					try {
-						addHypothesis(ELQueryEngineForT.getSubClassAxiom(left, right));
-						hypoField.setText(showHypothesis());
-					} catch (Exception e2) {
-						e2.printStackTrace();
-					}
-				} else {
-					// decompose tries to find underlying inclusions inside the right hand side
-					// by recursively breaking the left expression and adding new inclusions to the
-					// hypothesis
-					decompose(left, right);
-
-					// merge edges on right side of the inclusion (if possible) to make it logically
-					// stronger (more general)
-					right = siblingMerge(right);
-
-					// rebuild inclusion for final step
-					lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
-
-					lastCE = saturateWithTreeRight(lastCE);
-					left = ((OWLSubClassOfAxiom) lastCE).getSubClass();
-					right = ((OWLSubClassOfAxiom) lastCE).getSuperClass();
-					try {
-						addHypothesis(ELQueryEngineForT.getSubClassAxiom(left, right));
-						hypoField.setText(showHypothesis());
-					} catch (Exception e2) {
-						e2.printStackTrace();
-					}
+				try {
+					addHypothesis(lastCE);
+					hypoField.setText(showHypothesis());
+				} catch (Exception e2) {
+					e2.printStackTrace();
 				}
+			} else {
+				// decompose tries to find underlying inclusions inside the right hand side
+				// by recursively breaking the left expression and adding new inclusions to the
+				// hypothesis
+				if (learnerDecomp.isSelected())
+				{
+					//System.out.println("rhs decomp");
+					decompose(left, right);
+				}
+				// merge edges on right side of the inclusion (if possible) to make it logically
+				// stronger (more general)
+				if (learnerMerge.isSelected())
+				{
+					//System.out.println("rhs merge");
+					right = learnerSiblingMerge(left, right);
+				}
+				// rebuild inclusion for final step
+				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
+				if (learnerSat.isSelected())
+				{
+					//System.out.println("rhs saturate");
+					lastCE = saturateWithTreeRight(lastCE);
+				}
+				left = ((OWLSubClassOfAxiom) lastCE).getSubClass();
+				right = ((OWLSubClassOfAxiom) lastCE).getSuperClass();
+				try {
+					addHypothesis(lastCE);
+					hypoField.setText(showHypothesis());
+				} catch (Exception e2) {
+					e2.printStackTrace();
+				}
+			}
+			learner();
+		}
+		else
+		{
+			if (equivalenceQuery()) {
+				victory();
+				return;
+			} else if (ezBox.isSelected())
+				ezEq();
+			else
+				doCE();
+
+			ELTree leftTree = null;
+			ELTree rightTree = null;
+			OWLClassExpression left = null;
+			OWLClassExpression right = null;
+			// lastCE is last counter example provided by oracle, unsaturate and saturate
+			if (lastCE.isOfType(AxiomType.SUBCLASS_OF)) {
+				left = ((OWLSubClassOfAxiom) lastCE).getSubClass();
+				right = ((OWLSubClassOfAxiom) lastCE).getSuperClass();
+			} else {
+				return;
 
 			}
+			lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
+			// check if complex side is left
+			if (checkLeft(lastCE)) {
+
+				// decompose tries to find underlying inclusions inside the left hand side
+				// by recursively breaking the left expression and adding new inclusions to the
+				// hypothesis
+				if (learnerDecomp.isSelected())
+					decompose(left, right);
+
+				// branch edges on left side of the inclusion (if possible) to make it logically
+				// stronger (more general)
+				if (learnerMerge.isSelected())
+					left = branchLeft(left, right);
+
+				// unsaturate removes useless concepts from nodes in the inclusion
+				if (learnerUnsat.isSelected())
+					left = unsaturateLeft(lastCE);
+
+				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
+				try {
+					addHypothesis(lastCE);
+					hypoField.setText(showHypothesis());
+				} catch (Exception e2) {
+					e2.printStackTrace();
+				}
+			} else {
+				// decompose tries to find underlying inclusions inside the right hand side
+				// by recursively breaking the left expression and adding new inclusions to the
+				// hypothesis
+				if (learnerDecomp.isSelected())
+					decompose(left, right);
+
+				// merge edges on right side of the inclusion (if possible) to make it logically
+				// stronger (more general)
+				if (learnerMerge.isSelected())
+					right = learnerSiblingMerge(left, right);
+
+				// rebuild inclusion for final step
+				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
+				if (learnerSat.isSelected())
+					lastCE = saturateWithTreeRight(lastCE);
+
+				left = ((OWLSubClassOfAxiom) lastCE).getSubClass();
+				right = ((OWLSubClassOfAxiom) lastCE).getSuperClass();
+				try {
+					addHypothesis(lastCE);
+					hypoField.setText(showHypothesis());
+				} catch (Exception e2) {
+					e2.printStackTrace();
+				}
+			}
 		}
+		// }
 		showQueryCount();
+
 	}
 
-	public <OWLClass> Set<Set<OWLClass>> powerSet(Set<OWLClass> originalSet, int size) {
+	public Set<Set<OWLClass>> powerSetBySize(Set<OWLClass> originalSet, int size) {
 		Set<Set<OWLClass>> sets = new HashSet<Set<OWLClass>>();
 		if (size == 0) {
 			sets.add(new HashSet<OWLClass>());
@@ -739,32 +1142,13 @@ public class ELInterface extends JFrame {
 		for (int i = 0; i < list.size(); i++) {
 			OWLClass head = list.get(i);
 			List<OWLClass> rest = list.subList(i + 1, list.size());
-			Set<Set<OWLClass>> powerRest = powerSet(new HashSet<OWLClass>(rest), size - 1);
+			Set<Set<OWLClass>> powerRest = powerSetBySize(new HashSet<OWLClass>(rest), size - 1);
 			for (Set<OWLClass> p : powerRest) {
 				HashSet<OWLClass> appendedSet = new HashSet<OWLClass>();
 				appendedSet.add(head);
 				appendedSet.addAll(p);
 				sets.add(appendedSet);
 			}
-		}
-		return sets;
-	}
-
-	public <OWLClass> List<Set<OWLClass>> powerSet(Set<OWLClass> originalSet) {
-		List<Set<OWLClass>> sets = new ArrayList<Set<OWLClass>>();
-		if (originalSet.isEmpty()) {
-			sets.add(new HashSet<OWLClass>());
-			return sets;
-		}
-		List<OWLClass> list = new ArrayList<OWLClass>(originalSet);
-		OWLClass head = list.get(0);
-		Set<OWLClass> rest = new HashSet<OWLClass>(list.subList(1, list.size()));
-		for (Set<OWLClass> set : powerSet(rest)) {
-			Set<OWLClass> newSet = new HashSet<OWLClass>();
-			newSet.add(head);
-			newSet.addAll(set);
-			sets.add(newSet);
-			sets.add(set);
 		}
 		return sets;
 	}
@@ -800,42 +1184,6 @@ public class ELInterface extends JFrame {
 		return allSet;
 	}
 
-	public OWLClassExpression siblingMerge(OWLClassExpression ex) throws Exception {
-		ELTree tree = new ELTree(ex);
-		Set<ELNode> nodes = null;
-		// System.out.println(tree.toDescriptionString());
-		for (int i = 0; i < tree.getMaxLevel(); i++) {
-			nodes = tree.getNodesOnLevel(i + 1);
-			if (!nodes.isEmpty())
-				for (ELNode nod : nodes) {
-					// nod.label.addAll(nod.label);
-					if (!nod.edges.isEmpty() && nod.edges.size() > 1) {
-
-						for (int j = 0; j < nod.edges.size(); j++) {
-							for (int k = 0; k < nod.edges.size(); k++) {
-								if (j == k) {
-									continue;
-								}
-								if (nod.edges.get(j).strLabel.equals(nod.edges.get(k).strLabel)) {
-
-									// System.out.println("they are equal: " +
-									// nod.edges.get(j).node.toDescriptionString() + " AND " +
-									// nod.edges.get(k).node.toDescriptionString());
-									nod.edges.get(j).node.label.addAll(nod.edges.get(k).node.label);
-									if (!nod.edges.get(k).node.edges.isEmpty())
-										nod.edges.get(j).node.edges.addAll(nod.edges.get(k).node.edges);
-									nod.edges.remove(nod.edges.get(k));
-								}
-							}
-						}
-
-					}
-				}
-		}
-		// System.out.println(tree.getRootNode());
-		return ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
-	}
-
 	public boolean checkLeft(OWLAxiom axiom) {
 
 		String left = rendering.render(((OWLSubClassOfAxiom) axiom).getSubClass());
@@ -866,16 +1214,20 @@ public class ELInterface extends JFrame {
 
 		ELTree tree = new ELTree(sup);
 
+		 
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
 			if (!nodes.isEmpty())
 				for (ELNode nod : nodes) {
+					//maxSaturate = 3;
 					for (OWLClass cl : cIo) {
 						// System.out.println("Node before: " + nod);
+						//if(maxSaturate == 0)
+						//	break;
 						if (!nod.label.contains(cl) && !cl.toString().contains(":Thing")) {
 							nod.label.add(cl);
 						}
-
+						
 						OWLClassExpression newEx = ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
 						if (newEx.equals(null))
 							System.out.println("is null");
@@ -883,12 +1235,12 @@ public class ELInterface extends JFrame {
 
 						// check if hypothesis entails new saturated CI
 						membCount++;
-						if (ELQueryEngineH.entailed(newAx)) {
+						if (ELQueryEngineForT.entailed(newAx)) {
 							// CI is entailed by H, roll tree back to "safe" CI
 							tree = new ELTree(sup);
+ 
 
-						} else {
-
+						} else { 
 							sup = ELQueryEngineForT.parseClassExpression(tree.toDescriptionString());
 						}
 
@@ -909,7 +1261,7 @@ public class ELInterface extends JFrame {
 		return ELQueryEngineForT.getSubClassAxiom(sub, sup);
 	}
 
-	public OWLAxiom saturateWithTreeLeft(OWLAxiom axiom) throws Exception {
+	public OWLAxiom saturateWithTreeLeft(OWLSubClassOfAxiom axiom) throws Exception {
 		OWLClassExpression sub = ((OWLSubClassOfAxiom) axiom).getSubClass();
 		OWLClassExpression sup = ((OWLSubClassOfAxiom) axiom).getSuperClass();
 
@@ -1013,6 +1365,7 @@ public class ELInterface extends JFrame {
 				System.gc();
 				boolean check = equivalenceQuery();
 				do {
+					equivCount++;
 					x++;
 					if (check) {
 						// victory
@@ -1025,6 +1378,7 @@ public class ELInterface extends JFrame {
 				} while (!equivalenceQuery());
 			} else {
 				boolean check = equivalenceQuery();
+				equivCount++;
 				if (check) {
 					// victory
 					victory();
@@ -1101,8 +1455,14 @@ public class ELInterface extends JFrame {
 
 				reasonerForT = createReasoner(ontology);
 				shortFormProvider = new SimpleShortFormProvider();
-				axiomsT = ontology.getAxioms();
+				axiomsT = new HashSet<OWLAxiom>();
+				for (OWLAxiom axe : ontology.getAxioms())
+					if (!axe.toString().contains("Thing") && axe.isOfType(AxiomType.SUBCLASS_OF)
+							|| axe.isOfType(AxiomType.EQUIVALENT_CLASSES))
+						axiomsT.add(axe);
+
 				lastCE = null;
+
 				ELQueryEngineForT = new ELEngine(reasonerForT, shortFormProvider);
 				// transfer Origin ontology to ManchesterOWLSyntaxOntologyFormat
 				OWLOntologyFormat format = manager.getOntologyFormat(ontology);
@@ -1134,15 +1494,26 @@ public class ELInterface extends JFrame {
 				axiomsH = ontologyH.getAxioms();
 				loadedOnto.setText("Ontology loaded.");
 				wePlayin = true;
+
 				System.out.println(ontology);
 				System.out.println("Loaded successfully.");
 				System.out.println();
+
 				concepts = getSuggestionNames("concept");
 				roles = getSuggestionNames("role");
+
 				System.out.println("Total number of concepts is: " + concepts.size());
-				baseConcepts = new ArrayList<String>();
-				for (String str : concepts)
-					baseConcepts.add(str.substring(str.indexOf(" ") + 1));
+
+				SimpleClass simpleObject = new SimpleClass(rendering);
+				int[] mins = simpleObject.showCISizes(axiomsT);
+				smallestSize = mins[0];
+				System.out.println(mins[0]);
+				System.out.println(smallestSize);
+				showCISizes(axiomsT);
+				smallestCI.setText("Target smallest CI size: " + smallestSize);
+				averageCI.setText("Target average CI size: " + mins[1]);
+
+				mins = null;
 
 			} catch (OWLOntologyCreationException e) {
 				System.out.println("Could not load ontology: " + e.getMessage());
@@ -1166,7 +1537,12 @@ public class ELInterface extends JFrame {
 
 				reasonerForT = createReasoner(ontology);
 				shortFormProvider = new SimpleShortFormProvider();
-				axiomsT = ontology.getAxioms();
+				axiomsT = new HashSet<OWLAxiom>();
+				for (OWLAxiom axe : ontology.getAxioms())
+					if (!axe.toString().contains("Thing") && axe.isOfType(AxiomType.SUBCLASS_OF)
+							|| axe.isOfType(AxiomType.EQUIVALENT_CLASSES))
+						axiomsT.add(axe);
+
 				lastCE = null;
 				ELQueryEngineForT = new ELEngine(reasonerForT, shortFormProvider);
 				// transfer Origin ontology to ManchesterOWLSyntaxOntologyFormat
@@ -1206,10 +1582,13 @@ public class ELInterface extends JFrame {
 				concepts = getSuggestionNames("concept");
 				roles = getSuggestionNames("role");
 				System.out.println("Total number of concepts is: " + concepts.size());
-				baseConcepts = new ArrayList<String>();
-				for (String str : concepts)
-					baseConcepts.add(str.substring(str.indexOf(" ") + 1));
+				SimpleClass simpleObject = new SimpleClass(rendering);
 
+				int[] mins = simpleObject.showCISizes(axiomsT);
+				smallestSize = mins[0];
+				smallestCI.setText("Target smallest CI size: " + mins[0]);
+				averageCI.setText("Target average CI size: " + mins[1]);
+				mins = null;
 			} catch (OWLOntologyCreationException e) {
 				System.out.println("Could not load ontology: " + e.getMessage());
 			} catch (OWLException e) {
@@ -1262,6 +1641,8 @@ public class ELInterface extends JFrame {
 		reasonerForH = createReasoner(ontologyH);
 		ELEngine ELQueryEngineForH = new ELEngine(reasonerForH, shortFormProvider);
 
+		ELOracle oracle = new ELOracle(ontology, ontologyH, ELQueryEngineForT, ELQueryEngineForH);
+
 		Iterator<OWLAxiom> iteratorT = axiomsT.iterator();
 		while (iteratorT.hasNext()) {
 			OWLAxiom selectedAxiom = iteratorT.next();
@@ -1272,8 +1653,6 @@ public class ELInterface extends JFrame {
 				Boolean queryAns = ELQueryEngineForH.entailed(selectedAxiom);
 				// if hypothesis does NOT entail the CI
 				if (!queryAns) {
-					if (ezBox.isSelected())
-						return addHypothesis(selectedAxiom);
 
 					OWLSubClassOfAxiom counterexample = (OWLSubClassOfAxiom) selectedAxiom;
 					OWLClassExpression subclass = counterexample.getSubClass();
@@ -1289,19 +1668,23 @@ public class ELInterface extends JFrame {
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						// ADD SATURATION FOR newCounterexampleAxiom HERE
 
-						if (saturationBox.isSelected()) {
+						if (checkLeft(newCounterexampleAxiom) && oracleMerge.isSelected()) {
 							OWLClassExpression ex = null;
 							// System.out.println(newCounterexampleAxiom);
 							// if (checkLeft(newCounterexampleAxiom)) {
-							ex = siblingMerge(((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass());
-							newCounterexampleAxiom = saturateWithTreeLeft(
-									ELQueryEngineForT.getSubClassAxiom(ex, superclass));
-							/*
-							 * } else { ex = siblingMerge(((OWLSubClassOfAxiom)
-							 * newCounterexampleAxiom).getSuperClass()); newCounterexampleAxiom =
-							 * saturateWithTreeRight( ELQueryEngineForT.getSubClassAxiom(subclass, ex)); }
-							 */
+							ex = oracleSiblingMerge(((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass(),
+									((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
+							newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex, superclass);
 						}
+						if (oracleSaturate.isSelected())
+							newCounterexampleAxiom = saturateWithTreeLeft((OWLSubClassOfAxiom) newCounterexampleAxiom);
+
+						/*
+						 * } else { ex = siblingMerge(((OWLSubClassOfAxiom)
+						 * newCounterexampleAxiom).getSuperClass()); newCounterexampleAxiom =
+						 * saturateWithTreeRight( ELQueryEngineForT.getSubClassAxiom(subclass, ex)); }
+						 */
+
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						lastCE = newCounterexampleAxiom;
 						return addHypothesis(newCounterexampleAxiom);
@@ -1331,30 +1714,22 @@ public class ELInterface extends JFrame {
 							Boolean querySubClass = ELQueryEngineForH.entailed(newCounterexampleAxiom);
 							Boolean querySubClassforT = ELQueryEngineForT.entailed(newCounterexampleAxiom);
 							if (!querySubClass && querySubClassforT) {
-								lastCE = newCounterexampleAxiom;
-								if (ezBox.isSelected())
-									return addHypothesis(newCounterexampleAxiom);
 
 								// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 								// ADD SATURATION FOR newCounterexampleAxiom HERE
-								if (saturationBox.isSelected()) {
-									newCounterexampleAxiom = (OWLSubClassOfAxiom) newCounterexampleAxiom;
+								if (checkLeft(newCounterexampleAxiom) && oracleMerge.isSelected()) {
 									OWLClassExpression ex = null;
 									// System.out.println(newCounterexampleAxiom);
-
 									// if (checkLeft(newCounterexampleAxiom)) {
-									ex = siblingMerge(((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass());
-									newCounterexampleAxiom = saturateWithTreeLeft(ELQueryEngineForT.getSubClassAxiom(ex,
-											((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass()));
-
-									/*
-									 * } else { ex = siblingMerge( ((OWLSubClassOfAxiom)
-									 * newCounterexampleAxiom).getSuperClass()); newCounterexampleAxiom =
-									 * saturateWithTreeRight( ELQueryEngineForT.getSubClassAxiom(
-									 * ((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass(), ex)); }
-									 */
-
+									ex = oracleSiblingMerge(((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass(),
+											((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
+									newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex,
+											((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
 								}
+								if (oracleSaturate.isSelected())
+									newCounterexampleAxiom = saturateWithTreeLeft(
+											(OWLSubClassOfAxiom) newCounterexampleAxiom);
+
 								// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 								lastCE = newCounterexampleAxiom;
 								return addHypothesis(newCounterexampleAxiom);
@@ -1381,27 +1756,24 @@ public class ELInterface extends JFrame {
 
 					if (!queryAns) {
 						lastCE = selectedAxiom;
-						if (ezBox.isSelected())
-							return addHypothesis(selectedAxiom);
+
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						// ADD SATURATION FOR Axiom HERE
-						if (saturationBox.isSelected()) {
+						if (checkLeft(selectedAxiom) && oracleMerge.isSelected()) {
 							OWLClassExpression ex = null;
-							// if (checkLeft(Axiom)) {
-							ex = siblingMerge(((OWLSubClassOfAxiom) Axiom).getSubClass());
-
-							Axiom = saturateWithTreeLeft(ELQueryEngineForT.getSubClassAxiom(ex,
-									((OWLSubClassOfAxiom) Axiom).getSuperClass()));
-							/*
-							 * } else { ex = siblingMerge(((OWLSubClassOfAxiom) Axiom).getSuperClass());
-							 * Axiom = saturateWithTreeRight(ELQueryEngineForT
-							 * .getSubClassAxiom(((OWLSubClassOfAxiom) Axiom).getSubClass(), ex)); }
-							 */
-
+							// System.out.println(newCounterexampleAxiom);
+							// if (checkLeft(newCounterexampleAxiom)) {
+							ex = oracleSiblingMerge(((OWLSubClassOfAxiom) selectedAxiom).getSubClass(),
+									((OWLSubClassOfAxiom) selectedAxiom).getSuperClass());
+							Axiom = ELQueryEngineForT.getSubClassAxiom(ex,
+									((OWLSubClassOfAxiom) selectedAxiom).getSuperClass());
 						}
+						if (oracleSaturate.isSelected())
+							selectedAxiom = (OWLSubClassOfAxiom) saturateWithTreeLeft(selectedAxiom);
+
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
-						lastCE = Axiom;
-						return addHypothesis((OWLSubClassOfAxiom) Axiom);
+						lastCE = selectedAxiom;
+						return addHypothesis((OWLSubClassOfAxiom) selectedAxiom);
 					}
 				}
 
@@ -1415,29 +1787,24 @@ public class ELInterface extends JFrame {
 						Boolean queryAns = ELQueryEngineForH.entailed(subClassAxiom);
 						if (!queryAns) {
 							lastCE = subClassAxiom;
-							if (ezBox.isSelected())
-								return addHypothesis(subClassAxiom);
 
 							// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 							// ADD SATURATION FOR subClassAxiom HERE
-							if (saturationBox.isSelected()) {
-								System.out.println("CE is : " + Axiom);
-								Axiom = (OWLAxiom) subClassAxiom;
+							if (checkLeft(subClassAxiom) && oracleMerge.isSelected()) {
 								OWLClassExpression ex = null;
-								// if (checkLeft(Axiom)) {
-								ex = siblingMerge(((OWLSubClassOfAxiom) Axiom).getSubClass());
-								Axiom = saturateWithTreeLeft(ELQueryEngineForT.getSubClassAxiom(ex,
-										((OWLSubClassOfAxiom) Axiom).getSuperClass()));
-								/*
-								 * } else { ex = siblingMerge(((OWLSubClassOfAxiom) Axiom).getSuperClass());
-								 * Axiom = saturateWithTreeRight(ELQueryEngineForT
-								 * .getSubClassAxiom(((OWLSubClassOfAxiom) Axiom).getSubClass(), ex)); }
-								 */
-
+								// System.out.println(newCounterexampleAxiom);
+								// if (checkLeft(newCounterexampleAxiom)) {
+								ex = oracleSiblingMerge(((OWLSubClassOfAxiom) subClassAxiom).getSubClass(),
+										((OWLSubClassOfAxiom) subClassAxiom).getSuperClass());
+								Axiom = ELQueryEngineForT.getSubClassAxiom(ex,
+										((OWLSubClassOfAxiom) subClassAxiom).getSuperClass());
 							}
-							// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
-							lastCE = Axiom;
-							return addHypothesis(Axiom);
+							if (oracleSaturate.isSelected())
+								Axiom = saturateWithTreeLeft(subClassAxiom);
+
+							// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*?*-*-*-*-*-*-*-*
+							lastCE = subClassAxiom;
+							return addHypothesis(subClassAxiom);
 						}
 					}
 				}
@@ -1496,6 +1863,34 @@ public class ELInterface extends JFrame {
 		saveOWLFile(ontologyH, hypoFile);
 
 		return StringAxiom;
+	}
+
+	public void ezEq() {
+		equivCount++;
+		if (equivalenceQuery()) {
+			victory();
+			return;
+		}
+		
+		for (OWLAxiom ax : axiomsT) {
+			if (ax.toString().contains("Thing"))
+				continue;
+			if (!axiomsH.contains(ax)) {
+				try {
+					addHypothesis(ax);
+					lastCE = ax;
+					hypoField.setText(showHypothesis());
+					axiomsT.remove(ax);
+					axiomsH.add(ax);
+					break;
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		}
+
+		showQueryCount();
 	}
 
 	private OWLOntology MinHypothesis(OWLOntology hypoOntology, OWLAxiom addedAxiom) {
