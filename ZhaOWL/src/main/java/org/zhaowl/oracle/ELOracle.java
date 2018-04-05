@@ -54,9 +54,9 @@ public class ELOracle {
 		ELTree tree = new ELTree(left);
 		Set<ELNode> nodes = null;
 		// System.out.println(tree.toDescriptionString());
-		ELEngine engineH = new ELEngine(reasonerForH, shortFormProvider);
-		reasonerForH.dispose();
-
+		reasonerForH = createReasoner(ontology);
+		engineForT = new ELEngine(reasonerForH, shortFormProvider);
+		
 		OWLClassExpression oldTree = engineForT.parseClassExpression(tree.toDescriptionString());
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
@@ -98,6 +98,9 @@ public class ELOracle {
 		left = null;
 		right = null;
 		engineH = null;
+		reasonerForH.dispose();
+		engineForT = null;
+		
 		System.out.flush();
 		return engineForT.parseClassExpression(tree.toDescriptionString());
 	}
@@ -167,7 +170,7 @@ public class ELOracle {
 		nodes = null;
 		System.out.flush();
 		tree = null;
-
+		
 		reasonerForH.dispose();
 		return engineForT.getSubClassAxiom(sub, sup);
 	}
