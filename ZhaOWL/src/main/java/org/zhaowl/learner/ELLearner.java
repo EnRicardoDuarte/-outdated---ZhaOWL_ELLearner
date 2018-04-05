@@ -310,7 +310,7 @@ public class ELLearner {
 		OWLAxiom newAx = null;
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
-			if (!nodes.isEmpty())
+			//if (!nodes.isEmpty())
 				for (ELNode nod : nodes) {
 					// maxSaturate = 3;
 					for (OWLClass cl : cIo) {
