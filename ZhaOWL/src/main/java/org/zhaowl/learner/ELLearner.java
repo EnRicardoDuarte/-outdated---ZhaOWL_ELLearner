@@ -8,18 +8,23 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.semanticweb.HermiT.Reasoner;
+import org.semanticweb.elk.loading.AxiomLoader;
+import org.semanticweb.elk.owlapi.ElkReasonerFactory;
+import org.semanticweb.elk.reasoner.ReasonerFactory;
 import org.semanticweb.owlapi.model.OWLAxiom;
 import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
 import org.semanticweb.owlapi.model.OWLOntology;
 import org.semanticweb.owlapi.model.OWLSubClassOfAxiom;
 import org.semanticweb.owlapi.reasoner.OWLReasoner;
+import org.semanticweb.owlapi.reasoner.OWLReasonerFactory;
 import org.semanticweb.owlapi.util.ShortFormProvider;
 import org.zhaowl.tree.ELEdge;
 import org.zhaowl.tree.ELNode;
 import org.zhaowl.tree.ELTree;
 import org.zhaowl.userInterface.ELEngine;
 import org.zhaowl.userInterface.ELInterface;
+import org.zhaowl.utils.SimpleClass;
 
 public class ELLearner {
 
@@ -29,9 +34,9 @@ public class ELLearner {
 	public OWLOntology ontology;
 	public ELEngine engineForT;
 	public ELInterface elinterface;
-	
-	
-	public ELLearner(OWLReasoner reasoner, ShortFormProvider shortForm, OWLOntology ontology, OWLOntology ontologyH, ELEngine engineT, ELInterface elinterface) {
+
+	public ELLearner(OWLReasoner reasoner, ShortFormProvider shortForm, OWLOntology ontology, OWLOntology ontologyH,
+			ELEngine engineT, ELInterface elinterface) {
 		this.reasonerForH = reasoner;
 		this.shortFormProvider = shortForm;
 		this.ontology = ontology;
@@ -39,17 +44,17 @@ public class ELLearner {
 		this.engineForT = engineT;
 		this.elinterface = elinterface;
 	}
-	
+
 	public OWLReasoner createReasoner(final OWLOntology rootOntology) {
+
 		return new Reasoner.ReasonerFactory().createReasoner(rootOntology);
 	}
-	
+
 	public OWLClassExpression unsaturateLeft(OWLAxiom ax) throws Exception {
 		OWLClassExpression left = ((OWLSubClassOfAxiom) ax).getSubClass();
 		OWLClassExpression right = ((OWLSubClassOfAxiom) ax).getSuperClass();
 		ELTree tree = null;
 		tree = new ELTree(left);
-		reasonerForH = createReasoner(ontologyH);
 		Set<ELNode> nodes = null;
 
 		int sizeToCheck = 0;
@@ -61,6 +66,8 @@ public class ELLearner {
 
 		boolean foundSomething = false;
 
+		reasonerForH = createReasoner(ontology);
+		engineForT = new ELEngine(reasonerForH, shortFormProvider);
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
 			for (ELNode nod : nodes) {
@@ -100,8 +107,8 @@ public class ELLearner {
 						elinterface.membCount++;
 
 						// System.out.println(tree.toDescriptionString());
-						if (engineForT.entailed(engineForT
-								.parseToOWLSubClassOfAxiom(tree.toDescriptionString(), (new ELTree(right))
+						if (engineForT.entailed(
+								engineForT.parseToOWLSubClassOfAxiom(tree.toDescriptionString(), (new ELTree(right))
 										.toDescriptionString())))/*
 																	 * && !engineForH.entailed(ELQueryEngineForT.
 																	 * parseToOWLSubClassOfAxiom(
@@ -133,8 +140,16 @@ public class ELLearner {
 				foundSomething = false;
 				sizeToCheck = 0;
 			}
-		} 
-		return engineForT.parseClassExpression(tree.toDescriptionString());
+		}
+		System.out.flush();
+		OWLClassExpression ex = engineForT.parseClassExpression(tree.toDescriptionString());
+		engineForT = null;
+		reasonerForH.dispose();
+		left = null;
+		right = null;
+		tree = null;
+		nodes = null;
+		return ex;
 	}
 
 	public void decompose(OWLClassExpression left, OWLClassExpression right) {
@@ -160,13 +175,21 @@ public class ELLearner {
 			ELTree treeR = null;
 			ELTree treeL = null;
 			boolean leftSide = false;
-			// leftSide = checkLeft(ELQueryEngineForT.getSubClassAxiom(left, right));
 
+			reasonerForH = createReasoner(ontology);
+			engineForT = new ELEngine(reasonerForH, shortFormProvider);
 			treeL = new ELTree(left);
 			if (treeL.nodes.size() == 1) {
 				elinterface.addHypothesis(engineForT.getSubClassAxiom(left, right));
 				elinterface.hypoField.setText(elinterface.showHypothesis());
-				// globalDecompose = 5;
+				System.out.flush();
+
+				treeR = null;
+				treeL = null;
+				left = null;
+				right = null;
+				reasonerForH.dispose();
+				engineForT = null;
 				return;
 			} else
 				leftSide = true;
@@ -175,13 +198,18 @@ public class ELLearner {
 			if (treeR.nodes.size() == 1) {
 				elinterface.addHypothesis(engineForT.getSubClassAxiom(left, right));
 				elinterface.hypoField.setText(elinterface.showHypothesis());
-				// globalDecompose = 5;
+				System.out.flush();
+
+				treeR = null;
+				treeL = null;
+				left = null;
+				right = null;
+				reasonerForH.dispose();
+				engineForT = null;
 				return;
 			}
 			Set<ELNode> nodes = null;
 
-			reasonerForH = createReasoner(ontologyH);
-			ELEngine engineForH = new ELEngine(reasonerForH, shortFormProvider);
 			List<ELEdge> auxEdges = new LinkedList<ELEdge>();
 			if (leftSide)
 				treeR = new ELTree(left);
@@ -194,8 +222,6 @@ public class ELLearner {
 						continue;
 					for (String cl : elinterface.concepts) {
 						if (!cl.toString().contains("Thing")) {
-							if (cl.contains("10.0"))
-								continue;
 							// System.out.println("Class: " + rendering.render(cl));
 							OWLAxiom axiom = engineForT.getSubClassAxiom(
 									engineForT.parseClassExpression(nod.toDescriptionString()),
@@ -205,12 +231,21 @@ public class ELLearner {
 								auxEdges.add(nod.edges.get(j));
 							// auxEx = ELQueryEngineForT.parseClassExpression(treeR.toDescriptionString());
 							elinterface.membCount++;
-							if (engineForT.entailed(axiom) && !engineForH.entailed(axiom)) {
+							if (engineForT.entailed(axiom)) {
 								// System.out.println(nod.toDescriptionString());
 								// System.out.println(cl);
 								System.out.println(" Decompose this: " + axiom);
 								decompose(engineForT.parseClassExpression(nod.toDescriptionString()),
 										engineForT.parseClassExpression(cl));
+
+								treeR = null;
+								treeL = null;
+								left = null;
+								right = null;
+								engineForT = null;
+								nodes = null;
+								reasonerForH.dispose();
+								System.out.flush();
 								return;
 							} else {
 								nod.edges = new LinkedList<ELEdge>();
@@ -218,13 +253,21 @@ public class ELLearner {
 									elinterface.membCount++;
 									if (engineForT.entailed(engineForT.getSubClassAxiom(
 											engineForT.parseClassExpression(treeR.toDescriptionString()), right))
-											//&& !engineForH.entailed(engineForT.getSubClassAxiom(
-											//		engineForT.parseClassExpression(treeR.toDescriptionString()),
-											//		right))) {
-											) {
+									// && !engineForH.entailed(engineForT.getSubClassAxiom(
+									// engineForT.parseClassExpression(treeR.toDescriptionString()),
+									// right))) {
+									) {
 										// System.out.println(treeR.toDescriptionString());
-										decompose(engineForT.parseClassExpression(treeR.toDescriptionString()),
-												right);
+										decompose(engineForT.parseClassExpression(treeR.toDescriptionString()), right);
+
+										treeR = null;
+										treeL = null;
+										left = null;
+										right = null;
+										nodes = null;
+										engineForT = null;
+										reasonerForH.dispose();
+										System.out.flush();
 										return;
 									}
 								}
@@ -237,9 +280,20 @@ public class ELLearner {
 			}
 		} catch (Exception e) {
 			System.out.println("Error in decompose: " + e);
+
+			left = null;
+			right = null;
+			engineForT = null;
+			reasonerForH.dispose();
+			System.out.flush();
 			return;
 		}
 
+		left = null;
+		right = null;
+		engineForT = null;
+		reasonerForH.dispose();
+		System.out.flush();
 		return;
 	}
 
@@ -247,12 +301,13 @@ public class ELLearner {
 		OWLClassExpression sub = ((OWLSubClassOfAxiom) axiom).getSubClass();
 		OWLClassExpression sup = ((OWLSubClassOfAxiom) axiom).getSuperClass();
 
-		OWLReasoner auxReasonerForH = createReasoner(ontologyH);
 		Set<OWLClass> cIo = ontology.getClassesInSignature();
 		Set<ELNode> nodes = null;
 
 		ELTree tree = new ELTree(sup);
-
+		reasonerForH = createReasoner(ontology);
+		engineForT = new ELEngine(reasonerForH, shortFormProvider);
+		OWLAxiom newAx = null;
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
 			if (!nodes.isEmpty())
@@ -269,7 +324,7 @@ public class ELLearner {
 						OWLClassExpression newEx = engineForT.parseClassExpression(tree.toDescriptionString());
 						if (newEx.equals(null))
 							System.out.println("is null");
-						OWLAxiom newAx = engineForT.getSubClassAxiom(sub, newEx);
+						newAx = engineForT.getSubClassAxiom(sub, newEx);
 
 						// check if hypothesis entails new saturated CI
 						elinterface.membCount++;
@@ -289,13 +344,21 @@ public class ELLearner {
 		// System.out.println("Aux Tree: " + auxTree.getRootNode());
 		// System.out.println("Final after saturation: " + sub);
 		try {
-			elinterface.addHypothesis(engineForT.getSubClassAxiom(sub,
-					engineForT.parseClassExpression(tree.toDescriptionString())));
+			elinterface.addHypothesis(
+					engineForT.getSubClassAxiom(sub, engineForT.parseClassExpression(tree.toDescriptionString())));
 			elinterface.hypoField.setText(elinterface.showHypothesis());
 		} catch (Exception e2) {
 			e2.printStackTrace();
 		}
-		return engineForT.getSubClassAxiom(sub, sup);
+		tree = null;
+		newAx = null;
+		cIo = null;
+		nodes = null;
+		reasonerForH.dispose();
+		OWLAxiom ax = engineForT.getSubClassAxiom(sub, sup);
+		engineForT = null;
+		System.out.flush();
+		return ax;
 	}
 
 	public OWLClassExpression learnerSiblingMerge(OWLClassExpression left, OWLClassExpression right) throws Exception {
@@ -303,68 +366,93 @@ public class ELLearner {
 		/*
 		 * the learner must do sibling merging (if possible) on the right hand side
 		 */
+		try {
+			ELTree tree = new ELTree(right);
+			Set<ELNode> nodes = null;
+			// System.out.println(tree.toDescriptionString());
+			reasonerForH = createReasoner(ontology);
+			engineForT = new ELEngine(reasonerForH, shortFormProvider);
+			OWLClassExpression oldTree = engineForT.parseClassExpression(tree.toDescriptionString());
+			// System.out.println(tree.getRootNode());
+			// System.out.println(tree.toDescriptionString());
+			for (int i = 0; i < tree.getMaxLevel(); i++) {
 
-		ELTree tree = new ELTree(right);
-		Set<ELNode> nodes = null;
-		// System.out.println(tree.toDescriptionString());
-		OWLClassExpression oldTree = engineForT.parseClassExpression(tree.toDescriptionString());
-		System.out.println(tree.getRootNode());
-		System.out.println(tree.toDescriptionString());
-		for (int i = 0; i < tree.getMaxLevel(); i++) {
-			nodes = tree.getNodesOnLevel(i + 1);
-			if (!nodes.isEmpty())
-				for (ELNode nod : nodes) {
-					// nod.label.addAll(nod.label);
-					if (!nod.edges.isEmpty() && nod.edges.size() > 1) {
+				nodes = tree.getNodesOnLevel(i + 1);
+				if (!nodes.isEmpty())
+					for (ELNode nod : nodes) {
+						// nod.label.addAll(nod.label);
+						if (!nod.edges.isEmpty() && nod.edges.size() > 1) {
 
-						for (int j = 0; j < nod.edges.size(); j++) {
-							for (int k = 0; k < nod.edges.size(); k++) {
-								if (j == k) {
-									continue;
-								}
-								if (nod.edges.get(j).strLabel.equals(nod.edges.get(k).strLabel)) {
+							for (int j = 0; j < nod.edges.size(); j++) {
+								for (int k = 0; k < nod.edges.size(); k++) {
+									if (j == k) {
+										continue;
+									}
+									if (nod.edges.get(j).strLabel.equals(nod.edges.get(k).strLabel)) {
 
-									// System.out.println("they are equal: " +
-									// nod.edges.get(j).node.toDescriptionString() + " AND " +
-									// nod.edges.get(k).node.toDescriptionString());
-									nod.edges.get(j).node.label.addAll(nod.edges.get(k).node.label);
-									if (!nod.edges.get(k).node.edges.isEmpty())
-										nod.edges.get(j).node.edges.addAll(nod.edges.get(k).node.edges);
-									nod.edges.remove(nod.edges.get(k));
-									// check if new merged tree is entailed by T
-									if (engineForT.entailed(engineForT.getSubClassAxiom(left,
-											engineForT.parseClassExpression(tree.toDescriptionString())))) {
-										oldTree = engineForT.parseClassExpression(tree.toDescriptionString());
-									} else {
-										tree = new ELTree(oldTree);
+										// System.out.println("they are equal: " +
+										// nod.edges.get(j).node.toDescriptionString() + " AND " +
+										// nod.edges.get(k).node.toDescriptionString());
+										nod.edges.get(j).node.label.addAll(nod.edges.get(k).node.label);
+										if (!nod.edges.get(k).node.edges.isEmpty())
+											nod.edges.get(j).node.edges.addAll(nod.edges.get(k).node.edges);
+										nod.edges.remove(nod.edges.get(k));
+										// check if new merged tree is entailed by T
+										if (engineForT.entailed(engineForT.getSubClassAxiom(left,
+												engineForT.parseClassExpression(tree.toDescriptionString())))) {
+											oldTree = engineForT.parseClassExpression(tree.toDescriptionString());
+										} else {
+											tree = new ELTree(oldTree);
+										}
 									}
 								}
 							}
-						}
 
+						}
 					}
-				}
+			}
+			// System.out.println(tree.getRootNode());
+
+			System.out.flush();
+			left = null;
+			right = null;
+			nodes = null;
+			oldTree = null;
+			System.out.flush();
+			reasonerForH.dispose();
+			OWLClassExpression ex = engineForT.parseClassExpression(tree.toDescriptionString());
+			tree = null;
+			engineForT = null;
+			return ex;
+		} catch (Exception e) {
+			System.out.println("error in merge " + e);
 		}
-		// System.out.println(tree.getRootNode());
-		return engineForT.parseClassExpression(tree.toDescriptionString());
+		return null;
 	}
-	
+
 	public OWLClassExpression branchLeft(OWLClassExpression left, OWLClassExpression right) {
 		try {
 
 			ELTree treeL = new ELTree(left);
 			Set<ELNode> nodes = null;
 			List<ELEdge> auxEdges = null;
+			reasonerForH = createReasoner(ontology);
+			engineForT = new ELEngine(reasonerForH, shortFormProvider);
 			// System.out.println("we branch this one: \n" + treeL.rootNode);
+			// OWLClassExpression auxTree =
+			// engineForT.parseClassExpression(treeL.toDescriptionString());
+			// ELNode auxNode = new ELNode();
 			for (int i = 0; i < treeL.maxLevel; i++) {
 				nodes = treeL.getNodesOnLevel(i + 1);
 				for (ELNode nod : nodes) {
 					if (nod.edges.isEmpty())
 						continue;
 					auxEdges = new LinkedList<ELEdge>(nod.edges);
+
 					for (int j = 0; j < auxEdges.size(); j++) {
 						if (auxEdges.get(j).node.label.size() == 1)
 							continue;
+
 						// create list of classes in target node
 						List<OWLClass> classAux = new ArrayList<OWLClass>();
 						// fill list with classes
@@ -372,23 +460,46 @@ public class ELLearner {
 							classAux.add(cl);
 						// for each class, create a node and add class to target node
 						for (int k = 0; k < classAux.size(); k++) {
-							nod.edges.add(new ELEdge(auxEdges.get(j).label, new ELNode(
-									new ELTree(engineForT.parseClassExpression(elinterface.fixAxioms(classAux.get(k)))))));
+
+							nod.edges.add(new ELEdge(auxEdges.get(j).label, new ELNode(new ELTree(
+									engineForT.parseClassExpression(new SimpleClass().fixAxioms(classAux.get(k)))))));
+
 							// add class to new node
 							nod.edges.get(nod.edges.size() - 1).node.label.add(classAux.get(k));
+
 							// remove class from old node
 							auxEdges.get(j).node.label.remove(classAux.get(k));
 
+							// check target for entailment of new tree
+							
+							 if(engineForT.entailed(engineForT.getSubClassAxiom(engineForT.
+							 parseClassExpression(treeL.toDescriptionString()), right))) { // tree isvalid, update auxiliar tree 
+								 continue; 
+								 
+							 } else { // tree is invalid, rollback
+							  nod.edges.remove(nod.edges.size()-1);
+							  nod.edges.get(j).node.label.add(classAux.get(k)); // 
+							 }
 						}
 					}
 				}
 			}
 			// System.out.println("branched tree : \n" + treeL.rootNode);
 			// System.out.println(treeL.toDescriptionString());
-			return engineForT.parseClassExpression(treeL.toDescriptionString());
+			System.out.flush();
+			left = null;
+			right = null;
+			auxEdges = null;
+			nodes = null;
+			OWLClassExpression ex = engineForT.parseClassExpression(treeL.toDescriptionString());
+			engineForT = null;
+			reasonerForH.dispose();
+			treeL = null;
+			return ex;
 		} catch (Exception e) {
-			System.out.println("Error in branchNode: " + e);
+			e.printStackTrace();
 		}
+		System.out.flush();
 		return null;
 	}
 

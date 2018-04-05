@@ -5,11 +5,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -98,19 +95,21 @@ public class ELInterface extends JFrame {
 	public Boolean wePlayin = false;
 
 	public JList list_1 = new JList();
-	public JCheckBox oracleSaturate = new JCheckBox("Oracle saturation");
+	public JCheckBox oracleSaturate = new JCheckBox("Saturate");
 	public JCheckBox oracleMerge;
 	public JCheckBox oracleBranch;
+	public JCheckBox oracleUnsaturate;
+
 	public JCheckBox learnerSat;
 	public JCheckBox learnerMerge;
-	public JCheckBox learnerDecomp;
+	public JCheckBox learnerDecompL;
 	public JCheckBox learnerUnsat;
 	public JCheckBox learnerBranch;
+	public JCheckBox learnerDecompR;
 
 	public JCheckBox ezBox;
 	public JCheckBox autoBox = new JCheckBox("Auto learn [might take some moments]");
 	public JCheckBox fileLoad;
-	private final JScrollPane scrollPane = new JScrollPane();
 	private final JScrollPane scrollPane_1 = new JScrollPane();
 	private JTextField filePath;
 
@@ -148,11 +147,11 @@ public class ELInterface extends JFrame {
 	// ************ END OWL SPECIFIC VARIABLES ********************* //
 	public long timeStart = 0;
 	public long timeEnd = 0;
-	
-	
+	private JLabel lblNewLabel_3;
+
 	public ELInterface() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 787, 523);
+		setBounds(100, 100, 877, 518);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -218,19 +217,18 @@ public class ELInterface extends JFrame {
 		JButton btnNewButton_3 = new JButton("Equivalence query");
 		btnNewButton_3.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (ezBox.isSelected() && !win) {
-					if (autoBox.isSelected()) {
-						while (!win)
-							ezEq();
-					} else
-						ezEq();
-				} else {
-					equivalenceCheck();
-					equivalenceCount.setText("Total equivalence queries: " + equivCount);
+
+				try {
+					timeStart = System.currentTimeMillis();
+					learner();
+				} catch (Throwable e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
 				}
+
 			}
 		});
-		btnNewButton_3.setBounds(10, 269, 171, 23);
+		btnNewButton_3.setBounds(10, 258, 171, 23);
 		contentPane.add(btnNewButton_3);
 
 		JLabel lblNewLabel = new JLabel("SubClassOf");
@@ -243,10 +241,10 @@ public class ELInterface extends JFrame {
 		entailed.setBounds(191, 49, 121, 14);
 		contentPane.add(entailed);
 
-		memberCount.setBounds(497, 223, 225, 14);
+		memberCount.setBounds(261, 262, 225, 14);
 		contentPane.add(memberCount);
 
-		equivalenceCount.setBounds(497, 248, 225, 14);
+		equivalenceCount.setBounds(261, 287, 225, 14);
 		contentPane.add(equivalenceCount);
 
 		conc2 = new JTextField();
@@ -266,7 +264,7 @@ public class ELInterface extends JFrame {
 				int i = 0;
 				for (OWLAxiom axe : ontology.getAxioms()) {
 
-					if(axe.toString().contains("Thing"))
+					if (axe.toString().contains("Thing"))
 						continue;
 					if (axe.toString().contains("SubClassOf") || axe.toString().contains("Equivalent")) {
 						System.out.println("TBox CI element #" + (i + 1) + " = " + rendering.render(axe));
@@ -275,15 +273,16 @@ public class ELInterface extends JFrame {
 					}
 				}
 				// get sizes of inclusions
-				showCISizes(ontology.getAxioms());
+				showCIT(ontology.getAxioms());
 				// showCISizes(ontologyH.getAxioms());
 
 			}
 		});
-		btnNewButton_4.setBounds(548, 14, 213, 23);
+		btnNewButton_4.setBounds(638, 10, 213, 23);
 		contentPane.add(btnNewButton_4);
+		autoBox.setSelected(true);
 
-		autoBox.setBounds(120, 363, 366, 23);
+		autoBox.setBounds(485, 375, 366, 23);
 		contentPane.add(autoBox);
 		oracleSaturate.addMouseListener(new MouseAdapter() {
 			@Override
@@ -293,13 +292,8 @@ public class ELInterface extends JFrame {
 			}
 		});
 
-		oracleSaturate.setBounds(299, 269, 206, 23);
+		oracleSaturate.setBounds(485, 113, 107, 23);
 		contentPane.add(oracleSaturate);
-		scrollPane.setBounds(10, 79, 476, 179);
-
-		contentPane.add(scrollPane);
-
-		scrollPane.setViewportView(hypoField);
 		scrollPane_1.setBounds(10, 335, 105, 104);
 
 		contentPane.add(scrollPane_1);
@@ -361,32 +355,17 @@ public class ELInterface extends JFrame {
 						i++;
 					}
 				}
-				showCISizes(ontologyH.getAxioms());
+				showCIH(ontologyH.getAxioms());
 			}
 		});
-		btnNewButton_7.setBounds(548, 45, 213, 23);
+		btnNewButton_7.setBounds(638, 45, 213, 23);
 		contentPane.add(btnNewButton_7);
 
-		JButton btnNewButton_8 = new JButton("Try Learner [1 step]");
-		btnNewButton_8.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent arg0) {
-				try {
-					timeStart = System.currentTimeMillis();
-					learner();
-				} catch (Throwable e) {
-					// TODO Auto-generated catch block
-					System.out.println("Error in learner: " + e);
-				}
-			}
-		});
-		btnNewButton_8.setBounds(535, 269, 226, 23);
-		contentPane.add(btnNewButton_8);
-
 		fileLoad = new JCheckBox("Load From File");
-		fileLoad.setBounds(120, 389, 97, 23);
+		fileLoad.setBounds(121, 389, 97, 23);
 		contentPane.add(fileLoad);
 
-		ezBox = new JCheckBox("Ez mode [returns 1 direct inclusion from target T]");
+		ezBox = new JCheckBox("Easy mode [returns 1 direct inclusion from target T]");
 		ezBox.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
@@ -394,59 +373,83 @@ public class ELInterface extends JFrame {
 					oracleSaturate.setSelected(false);
 			}
 		});
-		ezBox.setBounds(120, 337, 366, 23);
+		ezBox.setBounds(485, 349, 366, 23);
 		contentPane.add(ezBox);
 
-		oracleMerge = new JCheckBox("Oracle Merge");
-		oracleMerge.setBounds(250, 295, 107, 23);
+		oracleMerge = new JCheckBox("Merge");
+		oracleMerge.setBounds(485, 139, 124, 23);
 		contentPane.add(oracleMerge);
 
 		learnerSat = new JCheckBox("Saturate");
-		learnerSat.setBounds(548, 333, 108, 23);
+		learnerSat.setBounds(625, 212, 108, 23);
 		contentPane.add(learnerSat);
 
 		learnerMerge = new JCheckBox("Sibling Merge");
-		learnerMerge.setBounds(548, 363, 97, 23);
+		learnerMerge.setBounds(625, 238, 136, 23);
 		contentPane.add(learnerMerge);
 
-		learnerDecomp = new JCheckBox("Learner decomposition");
-		learnerDecomp.setBounds(563, 389, 202, 23);
-		contentPane.add(learnerDecomp);
+		learnerDecompL = new JCheckBox("Decompose Left");
+		learnerDecompL.setBounds(485, 262, 136, 23);
+		contentPane.add(learnerDecompL);
 
 		learnerUnsat = new JCheckBox("Unsaturate");
-		learnerUnsat.setBounds(658, 333, 97, 23);
+		learnerUnsat.setBounds(485, 212, 114, 23);
 		contentPane.add(learnerUnsat);
 
 		learnerBranch = new JCheckBox("Branch");
-		learnerBranch.setBounds(658, 363, 103, 23);
+		learnerBranch.setBounds(485, 238, 103, 23);
 		contentPane.add(learnerBranch);
 
 		JLabel lblNewLabel_1 = new JLabel("Learner skills");
-		lblNewLabel_1.setBounds(601, 312, 154, 14);
+		lblNewLabel_1.setBounds(492, 191, 154, 14);
 		contentPane.add(lblNewLabel_1);
 
-		oracleBranch = new JCheckBox("Oracle Branch");
-		oracleBranch.setBounds(359, 295, 127, 23);
+		oracleBranch = new JCheckBox("Branch");
+		oracleBranch.setBounds(625, 139, 127, 23);
 		contentPane.add(oracleBranch);
 
 		averageCI = new JLabel("Target average CI size: 0");
-		averageCI.setBounds(497, 120, 264, 14);
+		averageCI.setBounds(261, 337, 264, 14);
 		contentPane.add(averageCI);
 
 		smallestCI = new JLabel("Target smallest CI size: 0");
-		smallestCI.setBounds(497, 145, 264, 14);
+		smallestCI.setBounds(261, 316, 264, 14);
 		contentPane.add(smallestCI);
+
+		oracleUnsaturate = new JCheckBox("Unsaturate");
+		oracleUnsaturate.setBounds(626, 113, 97, 23);
+		contentPane.add(oracleUnsaturate);
+
+		learnerDecompR = new JCheckBox("Decompose Right");
+		learnerDecompR.setBounds(626, 264, 131, 23);
+		contentPane.add(learnerDecompR);
+
+		JScrollPane scrollPane = new JScrollPane();
+		scrollPane.setBounds(10, 79, 409, 164);
+		contentPane.add(scrollPane);
+		scrollPane.setViewportView(hypoField);
+
+		JLabel lblNewLabel_2 = new JLabel("Oracle Skills");
+		lblNewLabel_2.setBounds(492, 92, 145, 14);
+		contentPane.add(lblNewLabel_2);
+
+		lblNewLabel_3 = new JLabel("[Small ontologies]");
+		lblNewLabel_3.setBounds(10, 316, 105, 14);
+		contentPane.add(lblNewLabel_3);
 
 	}
 
-	public void showCISizes(Set<OWLAxiom> axSet) {
+	public void showCIT(Set<OWLAxiom> axSet) {
 		int avgSize = 0;
 		int sumSize = 0;
 		smallestSize = 0;
 		smallestOne = null;
+		int ontSize = 0;
 		int totalSize = 0;
-		for (OWLAxiom axe : axSet) {
-
+		for (OWLAxiom axe : axiomsT) {
+			 
+			if(axe.toString().contains("Thing"))
+				continue;
 			String inclusion = rendering.render(axe);
 			inclusion = inclusion.replaceAll(" and ", " ");
 			inclusion = inclusion.replaceAll(" some ", " ");
@@ -457,7 +460,7 @@ public class ELInterface extends JFrame {
 			inclusion = inclusion.replaceAll(" and ", "");
 			// ==System.out.println(inclusion);
 			String[] arrIncl = inclusion.split(" ");
-			  totalSize = 0;
+			totalSize = 0;
 			for (int i = 0; i < arrIncl.length; i++)
 				if (arrIncl[i].length() > 1)
 					totalSize++;
@@ -474,14 +477,64 @@ public class ELInterface extends JFrame {
 					smallestSize = totalSize;
 				}
 			}
+			ontSize += totalSize;
+		 	sumSize += totalSize;
+			// System.out.println("Size of : " + rendering.render(axe) + "." + totalSize);
+			// System.out.println("Size of : " + inclusion + "." + totalSize);
+		}
+		System.out.println("Smallest logical axiom: " + rendering.render(smallestOne));
+		System.out.println("Size is: " + smallestSize);
+		System.out.println("Total size: " + ontSize);
+		System.out.println("Avg: " + sumSize / axiomsT.size());
 
+	}
+	public void showCIH(Set<OWLAxiom> axSet) {
+		int avgSize = 0;
+		int sumSize = 0;
+		smallestSize = 0;
+		smallestOne = null;
+		int ontSize = 0;
+		int totalSize = 0;
+		for (OWLAxiom axe : ontologyH.getAxioms()) {
+			 
+			if(axe.toString().contains("Thing"))
+				continue;
+			String inclusion = rendering.render(axe);
+			inclusion = inclusion.replaceAll(" and ", " ");
+			inclusion = inclusion.replaceAll(" some ", " ");
+			if (axe.toString().contains("SubClassOf"))
+				inclusion = inclusion.replaceAll("SubClassOf", "");
+			else
+				inclusion = inclusion.replaceAll("EquivalentTo", "");
+			inclusion = inclusion.replaceAll(" and ", "");
+			// ==System.out.println(inclusion);
+			String[] arrIncl = inclusion.split(" ");
+			totalSize = 0;
+			for (int i = 0; i < arrIncl.length; i++)
+				if (arrIncl[i].length() > 1)
+					totalSize++;
+			// for(int i = 0; i < arrIncl.length; i++)
+			// System.out.println(arrIncl[i] + "=====" +arrIncl[i].length());
+
+			// System.out.println(totalSize);
+			if (smallestOne == null) {
+				smallestOne = axe;
+				smallestSize = totalSize;
+			} else {
+				if (smallestSize >= totalSize) {
+					smallestOne = axe;
+					smallestSize = totalSize;
+				}
+			}
+			ontSize += totalSize;
 			sumSize += totalSize;
 			// System.out.println("Size of : " + rendering.render(axe) + "." + totalSize);
 			// System.out.println("Size of : " + inclusion + "." + totalSize);
 		}
 		System.out.println("Smallest logical axiom: " + rendering.render(smallestOne));
 		System.out.println("Size is: " + smallestSize);
-		System.out.println("Avg: " + sumSize / axSet.size());
+		System.out.println("Total size: " + ontSize);
+		System.out.println("Avg: " + sumSize / ontologyH.getAxioms().size());
 
 	}
 
@@ -500,16 +553,12 @@ public class ELInterface extends JFrame {
 		ontologyFolderH += "hypo_" + ontologyName;
 	}
 
-	
-	//public int globalDecompose = 5;
-	
-	
-	
-	
-	
+	// public int globalDecompose = 5;
+
 	public void learner() throws Throwable {
-		ELLearner learner = new ELLearner(reasonerForH, shortFormProvider, ontology, ontologyH, ELQueryEngineForT, this);
-		
+		ELLearner learner = new ELLearner(reasonerForH, shortFormProvider, ontology, ontologyH, ELQueryEngineForT,
+				this);
+
 		// we get a counter example from oracle
 		// while () {
 		if (autoBox.isSelected()) {
@@ -519,13 +568,18 @@ public class ELInterface extends JFrame {
 				victory();
 				timeEnd = System.currentTimeMillis();
 				System.out.println("Total time (ms): " + (timeEnd - timeStart));
+				lastCE = null;
+				
 				return;
-			} else if (ezBox.isSelected())
+			} else if (ezBox.isSelected()) {
+				equivCount++;
 				ezEq();
-			else
+			} else {
+				equivCount++;
 				doCE();
+			}
 			System.out.println(rendering.render(lastCE));
-	 
+
 			OWLClassExpression left = null;
 			OWLClassExpression right = null;
 			// lastCE is last counter example provided by oracle, unsaturate and saturate
@@ -543,22 +597,22 @@ public class ELInterface extends JFrame {
 				// decompose tries to find underlying inclusions inside the left hand side
 				// by recursively breaking the left expression and adding new inclusions to the
 				// hypothesis
-				if (learnerDecomp.isSelected())
-				{
-					//System.out.println("lhs decomp");
-					learner.decompose(left, right); 
+				if (learnerDecompL.isSelected()) {
+					// System.out.println("lhs decomp");
+					learner.decompose(left, right);
 				}
 				// branch edges on left side of the inclusion (if possible) to make it logically
 				// stronger (more general)
 				if (learnerBranch.isSelected()) {
-					//System.out.println("lhs branch");
+					// System.out.println("lhs branch");
 					left = learner.branchLeft(left, right);
 				}
-
+				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
+				
 				// unsaturate removes useless concepts from nodes in the inclusion
 				if (learnerUnsat.isSelected()) {
-					//System.out.println("lhs unsaturate");
-				
+					// System.out.println("lhs unsaturate");
+
 					left = learner.unsaturateLeft(lastCE);
 				}
 				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
@@ -572,23 +626,20 @@ public class ELInterface extends JFrame {
 				// decompose tries to find underlying inclusions inside the right hand side
 				// by recursively breaking the left expression and adding new inclusions to the
 				// hypothesis
-				if (learnerDecomp.isSelected())
-				{
-					//System.out.println("rhs decomp");
+				if (learnerDecompR.isSelected()) {
+					// System.out.println("rhs decomp");
 					learner.decompose(left, right);
 				}
 				// merge edges on right side of the inclusion (if possible) to make it logically
 				// stronger (more general)
-				if (learnerMerge.isSelected())
-				{
-					//System.out.println("rhs merge");
+				if (learnerMerge.isSelected()) {
+					// System.out.println("rhs merge");
 					right = learner.learnerSiblingMerge(left, right);
 				}
 				// rebuild inclusion for final step
 				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
-				if (learnerSat.isSelected())
-				{
-					//System.out.println("rhs saturate");
+				if (learnerSat.isSelected()) {
+					// System.out.println("rhs saturate");
 					lastCE = learner.saturateWithTreeRight(lastCE);
 				}
 				left = ((OWLSubClassOfAxiom) lastCE).getSubClass();
@@ -601,17 +652,20 @@ public class ELInterface extends JFrame {
 				}
 			}
 			learner();
-		}
-		else
-		{
+		/*} else {
 			if (equivalenceQuery()) {
 				victory();
+				timeEnd = System.currentTimeMillis();
+				System.out.println("Total time (ms): " + (timeEnd - timeStart));
 				return;
-			} else if (ezBox.isSelected())
+			} else if (ezBox.isSelected()) {
+				equivCount++;
 				ezEq();
-			else
+			} else {
+				equivCount++;
 				doCE();
- 
+			}
+
 			OWLClassExpression left = null;
 			OWLClassExpression right = null;
 			// lastCE is last counter example provided by oracle, unsaturate and saturate
@@ -629,14 +683,15 @@ public class ELInterface extends JFrame {
 				// decompose tries to find underlying inclusions inside the left hand side
 				// by recursively breaking the left expression and adding new inclusions to the
 				// hypothesis
-				if (learnerDecomp.isSelected())
+				if (learnerDecompL.isSelected())
 					learner.decompose(left, right);
 
 				// branch edges on left side of the inclusion (if possible) to make it logically
 				// stronger (more general)
 				if (learnerMerge.isSelected())
-					left = learner.branchLeft(left, right);
+					left = learner.learnerSiblingMerge(left, right);
 
+				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
 				// unsaturate removes useless concepts from nodes in the inclusion
 				if (learnerUnsat.isSelected())
 					left = learner.unsaturateLeft(lastCE);
@@ -652,7 +707,7 @@ public class ELInterface extends JFrame {
 				// decompose tries to find underlying inclusions inside the right hand side
 				// by recursively breaking the left expression and adding new inclusions to the
 				// hypothesis
-				if (learnerDecomp.isSelected())
+				if (learnerDecompR.isSelected())
 					learner.decompose(left, right);
 
 				// merge edges on right side of the inclusion (if possible) to make it logically
@@ -673,14 +728,13 @@ public class ELInterface extends JFrame {
 				} catch (Exception e2) {
 					e2.printStackTrace();
 				}
-			}
+			}*/
 		}
 		// }
 		showQueryCount();
 
 	}
 
-	
 	public ArrayList<String> getPS(ArrayList<String> strings) {
 		Set<String> inputSet = new HashSet<String>(strings);
 
@@ -730,57 +784,6 @@ public class ELInterface extends JFrame {
 		return true;
 	}
 
-	
-	
-	public String cleanStr(String str) {
-		return str.replaceAll("\n", "").replaceAll(",", "").replaceAll("\\[\\]", "");
-	}
-
-	public ArrayList<String> getConcepts(String concept) {
-		ArrayList<String> splitConcept = new ArrayList<String>();
-		for (String str : concept.split(" "))
-			if (concepts.contains(str))
-				splitConcept.add(str);
-		return splitConcept;
-	}
-
-	public String fixAxioms(OWLAxiom axiom) {
-		if (axiom.toString().contains("SubClassOf")) {
-			String auxStr = axiom.toString();
-			auxStr = auxStr.replaceAll(">", "");
-			int startPos = auxStr.indexOf("<");
-			int hashPos = auxStr.indexOf("#");
-			auxStr = auxStr.substring(0, startPos) + auxStr.substring(hashPos + 1);
-			while (auxStr.contains("#")) {
-				// System.out.println(auxStr);
-				startPos = auxStr.indexOf("<");
-				hashPos = auxStr.indexOf("#");
-				auxStr = auxStr.substring(0, startPos) + auxStr.substring(hashPos + 1);
-				// System.out.println(auxStr);
-			}
-			// System.out.println(auxStr);
-			return auxStr;
-		} else
-			return null;
-	}
-
-	public String fixAxioms(OWLClassExpression axiom) {
-		String auxStr = axiom.toString();
-		auxStr = auxStr.replaceAll(">", "");
-		int startPos = auxStr.indexOf("<");
-		int hashPos = auxStr.indexOf("#");
-		auxStr = auxStr.substring(0, startPos) + auxStr.substring(hashPos + 1);
-		while (auxStr.contains("#")) {
-			// System.out.println(auxStr);
-			startPos = auxStr.indexOf("<");
-			hashPos = auxStr.indexOf("#");
-			auxStr = auxStr.substring(0, startPos) + auxStr.substring(hashPos + 1);
-			// System.out.println(auxStr);
-		}
-		// System.out.println(auxStr);
-		return auxStr;
-	}
-
 	public void equivalenceCheck() {
 
 		int x = 0;
@@ -798,8 +801,10 @@ public class ELInterface extends JFrame {
 						// victory
 						victory();
 						System.out.println("It took: " + x);
+						System.out.flush();
 					} else {
 						// generate counter example
+						System.out.flush();
 						doCE();
 					}
 				} while (!equivalenceQuery());
@@ -820,7 +825,7 @@ public class ELInterface extends JFrame {
 
 	public void doCE() {
 		String counterEx = "";
-		System.out.println("Generating counter example... ");
+		System.out.println("Generating counterexample... ");
 		try {
 			counterEx = getCounterExample();
 
@@ -841,6 +846,11 @@ public class ELInterface extends JFrame {
 		win = true;
 		System.out.println("You dun did it!!!");
 		showQueryCount();
+		axiomsT = new HashSet<OWLAxiom>();
+		for (OWLAxiom axe : ontology.getAxioms())
+			if (!axe.toString().contains("Thing") && axe.isOfType(AxiomType.SUBCLASS_OF)
+					|| axe.isOfType(AxiomType.EQUIVALENT_CLASSES))
+				axiomsT.add(axe);
 	}
 
 	public void showQueryCount() {
@@ -894,26 +904,32 @@ public class ELInterface extends JFrame {
 				if (format.isPrefixOWLOntologyFormat()) {
 					manSyntaxFormat.copyPrefixesFrom(format.asPrefixOWLOntologyFormat());
 				}
+				format = null;
+				// create personalized names for ontology
 				ontologyFolderH = "src/main/resources/tmp/";
 				ontologyFolder = "src/main/resources/tmp/";
 				ontologyName = "";
 				getOntologyName();
-				newFile = new File(ontologyFolder);
-				hypoFile = new File(ontologyFolderH);
-				// save owl file as a new file in different location
-				if (newFile.exists()) {
-					newFile.delete();
-				}
-				newFile.createNewFile();
-				manager.saveOntology(ontology, manSyntaxFormat, IRI.create(newFile.toURI()));
 
-				// Create OWL Ontology Manager for hypothesis and load hypothesis file
-				if (hypoFile.exists()) {
-					hypoFile.delete();
-				}
-				hypoFile.createNewFile();
+				{ // save ontologies
+					newFile = new File(ontologyFolder);
+					hypoFile = new File(ontologyFolderH);
+					// save owl file as a new file in different location
+					if (newFile.exists()) {
+						newFile.delete();
+					}
+					newFile.createNewFile();
+					manager.saveOntology(ontology, manSyntaxFormat, IRI.create(newFile.toURI()));
 
-				ontologyH = manager.loadOntologyFromOntologyDocument(hypoFile);
+					// Create OWL Ontology Manager for hypothesis and load hypothesis file
+					if (hypoFile.exists()) {
+						hypoFile.delete();
+					}
+					hypoFile.createNewFile();
+
+					ontologyH = manager.loadOntologyFromOntologyDocument(hypoFile);
+				}
+
 				shortFormProvider = new SimpleShortFormProvider();
 				axiomsH = ontologyH.getAxioms();
 				loadedOnto.setText("Ontology loaded.");
@@ -923,22 +939,24 @@ public class ELInterface extends JFrame {
 				System.out.println("Loaded successfully.");
 				System.out.println();
 
-				concepts = getSuggestionNames("concept");
-				roles = getSuggestionNames("role");
+				concepts = new SimpleClass(rendering).getSuggestionNames("concept", newFile);
+				roles = new SimpleClass(rendering).getSuggestionNames("role", newFile);
 
 				System.out.println("Total number of concepts is: " + concepts.size());
 
 				SimpleClass simpleObject = new SimpleClass(rendering);
 				int[] mins = simpleObject.showCISizes(axiomsT);
+
 				smallestSize = mins[0];
-				//System.out.println(mins[0]);
-				//System.out.println(smallestSize);
-				//showCISizes(axiomsT);
+				// System.out.println(mins[0]);
+				// System.out.println(smallestSize);
+				// showCISizes(axiomsT);
 				smallestCI.setText("Target smallest CI size: " + smallestSize);
 				averageCI.setText("Target average CI size: " + mins[1]);
 
 				mins = null;
 
+				System.out.flush();
 			} catch (OWLOntologyCreationException e) {
 				System.out.println("Could not load ontology: " + e.getMessage());
 			} catch (OWLException e) {
@@ -968,6 +986,7 @@ public class ELInterface extends JFrame {
 						axiomsT.add(axe);
 
 				lastCE = null;
+
 				ELQueryEngineForT = new ELEngine(reasonerForT, shortFormProvider);
 				// transfer Origin ontology to ManchesterOWLSyntaxOntologyFormat
 				OWLOntologyFormat format = manager.getOntologyFormat(ontology);
@@ -975,26 +994,32 @@ public class ELInterface extends JFrame {
 				if (format.isPrefixOWLOntologyFormat()) {
 					manSyntaxFormat.copyPrefixesFrom(format.asPrefixOWLOntologyFormat());
 				}
+				format = null;
+				// create personalized names for ontology
 				ontologyFolderH = "src/main/resources/tmp/";
 				ontologyFolder = "src/main/resources/tmp/";
 				ontologyName = "";
 				getOntologyName();
-				newFile = new File(ontologyFolder);
-				hypoFile = new File(ontologyFolderH);
-				// save owl file as a new file in different location
-				if (newFile.exists()) {
-					newFile.delete();
-				}
-				newFile.createNewFile();
-				manager.saveOntology(ontology, manSyntaxFormat, IRI.create(newFile.toURI()));
 
-				// Create OWL Ontology Manager for hypothesis and load hypothesis file
-				if (hypoFile.exists()) {
-					hypoFile.delete();
-				}
-				hypoFile.createNewFile();
+				{ // save ontologies
+					newFile = new File(ontologyFolder);
+					hypoFile = new File(ontologyFolderH);
+					// save owl file as a new file in different location
+					if (newFile.exists()) {
+						newFile.delete();
+					}
+					newFile.createNewFile();
+					manager.saveOntology(ontology, manSyntaxFormat, IRI.create(newFile.toURI()));
 
-				ontologyH = manager.loadOntologyFromOntologyDocument(hypoFile);
+					// Create OWL Ontology Manager for hypothesis and load hypothesis file
+					if (hypoFile.exists()) {
+						hypoFile.delete();
+					}
+					hypoFile.createNewFile();
+
+					ontologyH = manager.loadOntologyFromOntologyDocument(hypoFile);
+				}
+
 				shortFormProvider = new SimpleShortFormProvider();
 				axiomsH = ontologyH.getAxioms();
 				loadedOnto.setText("Ontology loaded.");
@@ -1003,16 +1028,19 @@ public class ELInterface extends JFrame {
 				System.out.println(ontology);
 				System.out.println("Loaded successfully.");
 				System.out.println();
-				concepts = getSuggestionNames("concept");
-				roles = getSuggestionNames("role");
-				System.out.println("Total number of concepts is: " + concepts.size());
-				SimpleClass simpleObject = new SimpleClass(rendering);
 
-				int[] mins = simpleObject.showCISizes(axiomsT);
+				concepts = new SimpleClass(rendering).getSuggestionNames("concept", newFile);
+				roles = new SimpleClass(rendering).getSuggestionNames("role", newFile);
+
+				System.out.println("Total number of concepts is: " + concepts.size());
+
+				int[] mins = new SimpleClass(rendering).showCISizes(axiomsT);
 				smallestSize = mins[0];
 				smallestCI.setText("Target smallest CI size: " + mins[0]);
 				averageCI.setText("Target average CI size: " + mins[1]);
 				mins = null;
+
+				System.out.flush();
 			} catch (OWLOntologyCreationException e) {
 				System.out.println("Could not load ontology: " + e.getMessage());
 			} catch (OWLException e) {
@@ -1057,7 +1085,7 @@ public class ELInterface extends JFrame {
 		reasonerForH = createReasoner(ontologyH);
 		ELEngine ELQueryEngineForH = new ELEngine(reasonerForH, shortFormProvider);
 		Boolean queryAns = ELQueryEngineForH.entailed(axiomsT);
-
+		reasonerForH.dispose();
 		return queryAns;
 	}
 
@@ -1066,6 +1094,7 @@ public class ELInterface extends JFrame {
 		ELEngine ELQueryEngineForH = new ELEngine(reasonerForH, shortFormProvider);
 
 		ELOracle oracle = new ELOracle(reasonerForH, shortFormProvider, ontology, ontologyH, ELQueryEngineForT, this);
+		// reasonerForH.dispose();
 
 		Iterator<OWLAxiom> iteratorT = axiomsT.iterator();
 		while (iteratorT.hasNext()) {
@@ -1089,20 +1118,41 @@ public class ELInterface extends JFrame {
 					if (newCounterexampleAxiom != null) {
 						// if we actually got something, we use it as new counter example
 
+						System.out.println("subclass 1");
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						// ADD SATURATION FOR newCounterexampleAxiom HERE
+						OWLClassExpression ex = null;
+						if (checkLeft(newCounterexampleAxiom)) {
+							if (oracleMerge.isSelected()) {
+								ex = null;
+								// System.out.println(newCounterexampleAxiom);
+								// if (checkLeft(newCounterexampleAxiom)) {
+								ex = oracle.oracleSiblingMerge(
+										((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass(),
+										((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
+								newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex, superclass);
+								ex = null;
+							}
+							if (oracleSaturate.isSelected())
+								newCounterexampleAxiom = oracle
+										.saturateWithTreeLeft((OWLSubClassOfAxiom) newCounterexampleAxiom);
+						} else {
 
-						if (checkLeft(newCounterexampleAxiom) && oracleMerge.isSelected()) {
-							OWLClassExpression ex = null;
-							// System.out.println(newCounterexampleAxiom);
-							// if (checkLeft(newCounterexampleAxiom)) {
-							ex = oracle.oracleSiblingMerge(((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass(),
-									((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
-							newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex, superclass);
+							if (oracleBranch.isSelected()) {
+								ex = null;
+								OWLSubClassOfAxiom auxAx = (OWLSubClassOfAxiom) newCounterexampleAxiom;
+								ex = oracle.branchRight(auxAx.getSubClass(), auxAx.getSuperClass());
+								newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(auxAx.getSubClass(), ex);
+								auxAx = null;
+								ex = null;
+							}
+							if (oracleUnsaturate.isSelected()) {
+								ex = null;
+								//ex = oracle.unsaturateRight(newCounterexampleAxiom);
+								//newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex, superclass);
+								ex = null;
+							}
 						}
-						if (oracleSaturate.isSelected())
-							newCounterexampleAxiom = oracle.saturateWithTreeLeft((OWLSubClassOfAxiom) newCounterexampleAxiom);
-
 						/*
 						 * } else { ex = siblingMerge(((OWLSubClassOfAxiom)
 						 * newCounterexampleAxiom).getSuperClass()); newCounterexampleAxiom =
@@ -1111,6 +1161,12 @@ public class ELInterface extends JFrame {
 
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						lastCE = newCounterexampleAxiom;
+						subclass = null;
+						superclass = null;
+						oracle = null;
+						counterexample = null;
+						selectedAxiom = null;
+						iteratorT = null;
 						return addHypothesis(newCounterexampleAxiom);
 					}
 				}
@@ -1139,23 +1195,54 @@ public class ELInterface extends JFrame {
 							Boolean querySubClassforT = ELQueryEngineForT.entailed(newCounterexampleAxiom);
 							if (!querySubClass && querySubClassforT) {
 
+								System.out.println("eq 1");
 								// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 								// ADD SATURATION FOR newCounterexampleAxiom HERE
-								if (checkLeft(newCounterexampleAxiom) && oracleMerge.isSelected()) {
-									OWLClassExpression ex = null;
-									// System.out.println(newCounterexampleAxiom);
-									// if (checkLeft(newCounterexampleAxiom)) {
-									ex = oracle.oracleSiblingMerge(((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass(),
-											((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
-									newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex,
-											((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
-								}
-								if (oracleSaturate.isSelected())
-									newCounterexampleAxiom = oracle.saturateWithTreeLeft(
-											(OWLSubClassOfAxiom) newCounterexampleAxiom);
+								OWLClassExpression ex = null;
+								if (checkLeft(newCounterexampleAxiom)) {
+									if (oracleMerge.isSelected()) {
 
+										ex = null;
+										// System.out.println(newCounterexampleAxiom);
+										// if (checkLeft(newCounterexampleAxiom)) {
+										ex = oracle.oracleSiblingMerge(
+												((OWLSubClassOfAxiom) newCounterexampleAxiom).getSubClass(),
+												((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
+										newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex,
+												((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
+										ex = null;
+									}
+									if (oracleSaturate.isSelected())
+										newCounterexampleAxiom = oracle
+												.saturateWithTreeLeft((OWLSubClassOfAxiom) newCounterexampleAxiom);
+								} else {
+									if (oracleBranch.isSelected()) {
+										ex = null;
+										OWLSubClassOfAxiom auxAx = (OWLSubClassOfAxiom) newCounterexampleAxiom;
+										ex = oracle.branchRight(auxAx.getSubClass(), auxAx.getSuperClass());
+										newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(auxAx.getSubClass(),
+												ex);
+										auxAx = null;
+										ex = null;
+									}
+									if (oracleUnsaturate.isSelected()) {
+										ex = null;
+										//ex = oracle.unsaturateRight(newCounterexampleAxiom);
+										//newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
+										ex = null;
+									}
+								}
 								// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 								lastCE = newCounterexampleAxiom;
+								oracle = null;
+								subclass = null;
+								SuperclassInSet = null;
+								superclasses = null;
+								counterexample = null;
+								subClassAxiom = null;
+								selectedAxiom = null;
+								iteratorT = null;
+								System.out.flush();
 								return addHypothesis(newCounterexampleAxiom);
 							}
 						}
@@ -1180,23 +1267,51 @@ public class ELInterface extends JFrame {
 
 					if (!queryAns) {
 						lastCE = selectedAxiom;
-
+						System.out.println("subclass 2");
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						// ADD SATURATION FOR Axiom HERE
-						if (checkLeft(selectedAxiom) && oracleMerge.isSelected()) {
-							OWLClassExpression ex = null;
-							// System.out.println(newCounterexampleAxiom);
-							// if (checkLeft(newCounterexampleAxiom)) {
-							ex = oracle.oracleSiblingMerge(((OWLSubClassOfAxiom) selectedAxiom).getSubClass(),
-									((OWLSubClassOfAxiom) selectedAxiom).getSuperClass());
-							Axiom = ELQueryEngineForT.getSubClassAxiom(ex,
-									((OWLSubClassOfAxiom) selectedAxiom).getSuperClass());
-						}
-						if (oracleSaturate.isSelected())
-							selectedAxiom = (OWLSubClassOfAxiom) oracle.saturateWithTreeLeft(selectedAxiom);
+						OWLClassExpression ex = null;
+						if (checkLeft(selectedAxiom)) {
+							if (oracleMerge.isSelected()) {
+								ex = null;
+								// System.out.println(newCounterexampleAxiom);
+								// if (checkLeft(newCounterexampleAxiom)) {
+								ex = oracle.oracleSiblingMerge(((OWLSubClassOfAxiom) selectedAxiom).getSubClass(),
+										((OWLSubClassOfAxiom) selectedAxiom).getSuperClass());
+								selectedAxiom = (OWLSubClassOfAxiom) ELQueryEngineForT.getSubClassAxiom(ex,
+										((OWLSubClassOfAxiom) selectedAxiom).getSuperClass());
+								ex = null;
+							}
+							if (oracleSaturate.isSelected())
+								selectedAxiom = (OWLSubClassOfAxiom) oracle
+										.saturateWithTreeLeft((OWLSubClassOfAxiom) selectedAxiom);
+						} else {
 
+							if (oracleBranch.isSelected()) {
+								ex = null;
+								OWLSubClassOfAxiom auxAx = (OWLSubClassOfAxiom) selectedAxiom;
+								ex = oracle.branchRight(auxAx.getSubClass(), auxAx.getSuperClass());
+								selectedAxiom = (OWLSubClassOfAxiom) ELQueryEngineForT
+										.getSubClassAxiom(auxAx.getSubClass(), ex);
+								auxAx = null;
+								ex = null;
+							}
+							if (oracleUnsaturate.isSelected()) {
+								ex = null;
+								//ex = oracle.unsaturateRight((OWLSubClassOfAxiom) selectedAxiom);
+								//selectedAxiom = (OWLSubClassOfAxiom) ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom) selectedAxiom).getSuperClass());
+								ex = null;
+							}
+
+						}
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						lastCE = selectedAxiom;
+
+						oracle = null;
+						Axiom = null;
+						iterator = null;
+						iteratorT = null;
+						System.out.flush();
 						return addHypothesis((OWLSubClassOfAxiom) selectedAxiom);
 					}
 				}
@@ -1211,23 +1326,50 @@ public class ELInterface extends JFrame {
 						Boolean queryAns = ELQueryEngineForH.entailed(subClassAxiom);
 						if (!queryAns) {
 							lastCE = subClassAxiom;
-
+							System.out.println("eqcl 2");
 							// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 							// ADD SATURATION FOR subClassAxiom HERE
-							if (checkLeft(subClassAxiom) && oracleMerge.isSelected()) {
-								OWLClassExpression ex = null;
-								// System.out.println(newCounterexampleAxiom);
-								// if (checkLeft(newCounterexampleAxiom)) {
-								ex = oracle.oracleSiblingMerge(((OWLSubClassOfAxiom) subClassAxiom).getSubClass(),
-										((OWLSubClassOfAxiom) subClassAxiom).getSuperClass());
-								Axiom = ELQueryEngineForT.getSubClassAxiom(ex,
-										((OWLSubClassOfAxiom) subClassAxiom).getSuperClass());
-							}
-							if (oracleSaturate.isSelected())
-								Axiom = oracle.saturateWithTreeLeft(subClassAxiom);
+							OWLClassExpression ex = null;
 
+							if (checkLeft(subClassAxiom)) {
+								if (oracleMerge.isSelected()) {
+									ex = null;
+									// System.out.println(newCounterexampleAxiom);
+									// if (checkLeft(newCounterexampleAxiom)) {
+									ex = oracle.oracleSiblingMerge(((OWLSubClassOfAxiom) subClassAxiom).getSubClass(),
+											((OWLSubClassOfAxiom) subClassAxiom).getSuperClass());
+									subClassAxiom = (OWLSubClassOfAxiom) ELQueryEngineForT.getSubClassAxiom(ex,
+											((OWLSubClassOfAxiom) subClassAxiom).getSuperClass());
+									ex = null;
+								}
+								if (oracleSaturate.isSelected())
+									subClassAxiom = (OWLSubClassOfAxiom) oracle
+											.saturateWithTreeLeft((OWLSubClassOfAxiom) subClassAxiom);
+							} else {
+								if (oracleBranch.isSelected()) {
+									ex = null;
+									OWLSubClassOfAxiom auxAx = (OWLSubClassOfAxiom) subClassAxiom;
+									ex = oracle.branchRight(auxAx.getSubClass(), auxAx.getSuperClass());
+									subClassAxiom = (OWLSubClassOfAxiom) ELQueryEngineForT
+											.getSubClassAxiom(auxAx.getSubClass(), ex);
+									auxAx = null;
+									ex = null;
+								}
+								if (oracleUnsaturate.isSelected()) {
+									ex = null;
+									//ex = oracle.unsaturateRight((OWLSubClassOfAxiom) subClassAxiom);
+									//subClassAxiom = (OWLSubClassOfAxiom) ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom) subClassAxiom).getSuperClass());
+									ex = null;
+								}
+							}
 							// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*?*-*-*-*-*-*-*-*
 							lastCE = subClassAxiom;
+							oracle = null;
+							Axiom = null;
+							iterator = null;
+							iteratorAsSub = null;
+							iteratorT = null;
+							System.out.flush();
 							return addHypothesis(subClassAxiom);
 						}
 					}
@@ -1235,13 +1377,16 @@ public class ELInterface extends JFrame {
 			}
 		}
 		System.out.println("no more CIs");
+		oracle = null;
+		iterator = null;
+		iteratorT = null;
+		System.out.flush();
 		return null;
 	}
 
 	private OWLAxiom getCounterExamplefromSubClassAxiom(OWLClassExpression subclass, OWLClassExpression superclass) {
 		reasonerForH = createReasoner(ontologyH);
 		ELEngine ELQueryEngineForH = new ELEngine(reasonerForH, shortFormProvider);
-
 		Set<OWLClass> superclasses = ELQueryEngineForT.getSuperClasses(superclass, false);
 		Set<OWLClass> subclasses = ELQueryEngineForT.getSubClasses(subclass, false);
 
@@ -1254,6 +1399,12 @@ public class ELInterface extends JFrame {
 				Boolean querySubClass = ELQueryEngineForH.entailed(newCounterexampleAxiom);
 				Boolean querySubClassforT = ELQueryEngineForT.entailed(newCounterexampleAxiom);
 				if (!querySubClass && querySubClassforT) {
+					SubclassInSet = null;
+					superclass = null;
+					iteratorSubClass = null;
+					ELQueryEngineForH = null;
+
+					reasonerForH.dispose();
 					return newCounterexampleAxiom;
 				}
 			}
@@ -1267,10 +1418,23 @@ public class ELInterface extends JFrame {
 				Boolean querySubClass = ELQueryEngineForH.entailed(newCounterexampleAxiom);
 				Boolean querySubClassforT = ELQueryEngineForT.entailed(newCounterexampleAxiom);
 				if (!querySubClass && querySubClassforT) {
+
+					SuperclassInSet = null;
+					superclass = null;
+					subclass = null;
+					iteratorSuperClass = null;
+					ELQueryEngineForH = null;
+
+					reasonerForH.dispose();
 					return newCounterexampleAxiom;
 				}
 			}
 		}
+ 
+		ELQueryEngineForH = null; 
+		superclass = null;
+		subclass = null;   
+		reasonerForH.dispose(); 
 		return null;
 	}
 
@@ -1279,23 +1443,22 @@ public class ELInterface extends JFrame {
 
 		AddAxiom newAxiomInH = new AddAxiom(ontologyH, addedAxiom);
 		manager.applyChange(newAxiomInH);
-
 		saveOWLFile(ontologyH, hypoFile);
 
 		// minimize hypothesis
 		ontologyH = MinHypothesis(ontologyH, addedAxiom);
 		saveOWLFile(ontologyH, hypoFile);
-
+		newAxiomInH = null;
+		addedAxiom = null;
 		return StringAxiom;
 	}
 
 	public void ezEq() {
-		equivCount++;
 		if (equivalenceQuery()) {
 			victory();
 			return;
 		}
-		
+
 		for (OWLAxiom ax : axiomsT) {
 			if (ax.toString().contains("Thing"))
 				continue;
@@ -1336,6 +1499,7 @@ public class ELInterface extends JFrame {
 					OWLReasoner tmpreasoner = createReasoner(tmpOntologyH);
 					ELEngine tmpELQueryEngine = new ELEngine(tmpreasoner, shortFormProvider);
 					Boolean queryAns = tmpELQueryEngine.entailed(checkedAxiom);
+					tmpreasoner.dispose();
 
 					if (queryAns) {
 						RemoveAxiom removedAxiomFromH = new RemoveAxiom(hypoOntology, checkedAxiom);
@@ -1347,7 +1511,7 @@ public class ELInterface extends JFrame {
 					} else {
 						AddAxiom addAxiomtoH = new AddAxiom(hypoOntology, checkedAxiom);
 						manager.applyChange(addAxiomtoH);
-
+						addAxiomtoH = null;
 					}
 				}
 			}
@@ -1365,6 +1529,10 @@ public class ELInterface extends JFrame {
 				// JOptionPane.INFORMATION_MESSAGE);
 			}
 		}
+		tmpaxiomsH = null;
+		ineratorMinH = null;
+		checkedAxiomsSet = null;
+
 		return hypoOntology;
 	}
 
@@ -1376,6 +1544,7 @@ public class ELInterface extends JFrame {
 			// need to remove prefixes
 			manSyntaxFormat.clearPrefixes();
 		}
+		format = null;
 		manager.saveOntology(ontology, manSyntaxFormat, IRI.create(file.toURI()));
 	}
 
@@ -1386,37 +1555,7 @@ public class ELInterface extends JFrame {
 		for (OWLAxiom axiom : axiomsInH) {
 			hypoInManchester = hypoInManchester + rendering.render(axiom) + "\n";
 		}
+		axiomsInH = null;
 		return hypoInManchester;
-	}
-
-	public ArrayList<String> getSuggestionNames(String s) throws IOException {
-
-		ArrayList<String> names = new ArrayList<String>();
-		FileInputStream in = new FileInputStream(newFile);
-		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-
-		String line = reader.readLine();
-		if (s.equals("concept")) {
-			while (line != null) {
-				if (line.startsWith("Class:")) {
-					String conceptName = line.substring(7);
-					if (!conceptName.equals("owl:Thing")) {
-						names.add(conceptName);
-					}
-				}
-				line = reader.readLine();
-			}
-		} else if (s.equals("role")) {
-			while (line != null) {
-				if (line.startsWith("ObjectProperty:")) {
-					String roleName = line.substring(16);
-					names.add(roleName);
-
-				}
-
-				line = reader.readLine();
-			}
-		}
-		return names;
 	}
 }

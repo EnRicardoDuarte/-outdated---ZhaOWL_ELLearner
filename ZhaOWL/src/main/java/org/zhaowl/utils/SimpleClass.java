@@ -1,18 +1,81 @@
 package org.zhaowl.utils;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
 import java.util.Set;
 
 import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLClassExpression;
+import org.semanticweb.owlapi.model.OWLOntology;
 
 import uk.ac.manchester.cs.owl.owlapi.mansyntaxrenderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 
 public class SimpleClass {
 	public ManchesterOWLSyntaxOWLObjectRendererImpl rendering;
-	
+
+ 
 	public SimpleClass(ManchesterOWLSyntaxOWLObjectRendererImpl rendering)
 	{
 		this.rendering = rendering;
 	}
+	public SimpleClass()
+	{
+		
+	}
+	 
+	public String fixAxioms(OWLClassExpression axiom) {
+		String auxStr = axiom.toString();
+		auxStr = auxStr.replaceAll(">", "");
+		int startPos = auxStr.indexOf("<");
+		int hashPos = auxStr.indexOf("#");
+		auxStr = auxStr.substring(0, startPos) + auxStr.substring(hashPos + 1);
+		while (auxStr.contains("#")) {
+			// System.out.println(auxStr);
+			startPos = auxStr.indexOf("<");
+			hashPos = auxStr.indexOf("#");
+			auxStr = auxStr.substring(0, startPos) + auxStr.substring(hashPos + 1);
+			// System.out.println(auxStr);
+		}
+		// System.out.println(auxStr);
+		return auxStr;
+	}
+	
+	public ArrayList<String> getSuggestionNames(String s, File newFile) throws IOException {
+
+		ArrayList<String> names = new ArrayList<String>();
+		FileInputStream in = new FileInputStream(newFile);
+		BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+		String line = reader.readLine();
+		if (s.equals("concept")) {
+			while (line != null) {
+				if (line.startsWith("Class:")) {
+					String conceptName = line.substring(7);
+					if (!conceptName.equals("owl:Thing")) {
+						names.add(conceptName);
+					}
+				}
+				line = reader.readLine();
+			}
+		} else if (s.equals("role")) {
+			while (line != null) {
+				if (line.startsWith("ObjectProperty:")) {
+					String roleName = line.substring(16);
+					names.add(roleName);
+
+				}
+
+				line = reader.readLine();
+			}
+		}
+		reader.close();
+		return names;
+	}
+	
 	
 	public int[] showCISizes(Set<OWLAxiom> axSet)
 	{
