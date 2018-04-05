@@ -561,7 +561,7 @@ public class ELInterface extends JFrame {
 
 		// we get a counter example from oracle
 		// while () {
-		if (autoBox.isSelected()) {
+		//if (autoBox.isSelected()) {
 			showQueryCount();
 			hypoField.setText(showHypothesis());
 			if (equivalenceQuery()) {
@@ -651,7 +651,7 @@ public class ELInterface extends JFrame {
 					e2.printStackTrace();
 				}
 			}
-			learner();
+			//learner();
 		/*} else {
 			if (equivalenceQuery()) {
 				victory();
@@ -729,7 +729,7 @@ public class ELInterface extends JFrame {
 					e2.printStackTrace();
 				}
 			}*/
-		}
+		//}
 		// }
 		showQueryCount();
 
