@@ -97,7 +97,6 @@ public class ELOracle {
 		nodes = null;
 		left = null;
 		right = null;
-		engineH = null;
 		reasonerForH.dispose();
 		engineForT = null;
 		
