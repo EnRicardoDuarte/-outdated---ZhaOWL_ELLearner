@@ -26,22 +26,12 @@ public class consoleLearner {
 		 */
 		
 		consoleLearner maker = new consoleLearner();  
-		//maker.setValues(args);
 		maker.doIt(args);
 		
 
 	}
 	  
-	public void setValues(String[] vals)
-	{
-		values[0] = vals[0];
-		values[1] = vals[1];
-		values[2] = vals[2];
-		values[3] = vals[3];
-		values[4] = vals[4];
-		values[5] = vals[5];
-		values[6] = vals[6];
-	}
+	
 	
 	public   void doIt(String[] args) {  
 		
