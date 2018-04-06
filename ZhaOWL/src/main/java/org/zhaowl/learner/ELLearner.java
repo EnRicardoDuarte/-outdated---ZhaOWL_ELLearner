@@ -297,13 +297,14 @@ public class ELLearner {
 		return;
 	}
 
+	public int count = 0;
 	public OWLAxiom saturateWithTreeRight(OWLAxiom axiom) throws Exception {
 		OWLClassExpression sub = ((OWLSubClassOfAxiom) axiom).getSubClass();
 		OWLClassExpression sup = ((OWLSubClassOfAxiom) axiom).getSuperClass();
 
 		Set<OWLClass> cIo = ontology.getClassesInSignature();
 		Set<ELNode> nodes = null;
-
+		count = 0;
 		ELTree tree = new ELTree(sup);
 		reasonerForH = createReasoner(ontology);
 		engineForT = new ELEngine(reasonerForH, shortFormProvider);
@@ -325,14 +326,16 @@ public class ELLearner {
 						if (newEx.equals(null))
 							System.out.println("is null");
 						newAx = engineForT.getSubClassAxiom(sub, newEx);
-
+						count ++;
 						// check if hypothesis entails new saturated CI
 						elinterface.membCount++;
+						
 						if (engineForT.entailed(newAx)) {
 							// CI is entailed by H, roll tree back to "safe" CI
+							
 							tree = new ELTree(sup);
-
 						} else {
+
 							sup = engineForT.parseClassExpression(tree.toDescriptionString());
 						}
 
@@ -350,6 +353,7 @@ public class ELLearner {
 		} catch (Exception e2) {
 			e2.printStackTrace();
 		}
+		System.out.println("Total membq for " + axiom + "\n--- " + count);
 		tree = null;
 		newAx = null;
 		cIo = null;
