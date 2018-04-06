@@ -72,6 +72,8 @@ public class consoleLearner {
 			// setLearnerSkills
 			setLearnerSkills(args);
 			
+			// setLearnerSkills
+			setOracleSkills(args);
 			// load ontology
 			Zha.loadOntology();
 			
@@ -82,9 +84,9 @@ public class consoleLearner {
 				Zha.learner();
 				System.out.println("Total membership queries: " + Zha.membCount); 
 				System.out.println("Total equivalence queries: " + Zha.equivCount);
-				System.out.println("Target TBox inclusions: " + Zha.axiomsT.size());
+				System.out.println("Target TBox logical axioms: " + Zha.axiomsT.size());
 				Zha.showCIT(Zha.axiomsT);
-				System.out.println("Hypothesis TBox inclusions: " + Zha.ontologyH.getAxioms().size()); 
+				System.out.println("Hypothesis TBox logical axioms: " + Zha.ontologyH.getAxioms().size()); 
 				Zha.showCIH(Zha.ontologyH.getAxioms());
 				
 			} catch (Throwable e) {
@@ -98,6 +100,29 @@ public class consoleLearner {
 	
 	}
 
+	public void setOracleSkills(String[] args)
+	{
+		if (args[7].equals("t"))
+			Zha.oracleMerge.setSelected(true);
+		else
+			Zha.oracleMerge.setSelected(false);
+
+		if (args[8].equals("t"))
+			Zha.oracleSaturate.setSelected(true);
+		else
+			Zha.oracleSaturate.setSelected(false);
+
+		if (args[9].equals("t"))
+			Zha.oracleBranch.setSelected(true);
+		else
+			Zha.oracleBranch.setSelected(false);
+
+		if (args[10].equals("t"))
+			Zha.oracleUnsaturate.setSelected(true);
+		else
+			Zha.oracleUnsaturate.setSelected(false);
+	}
+	
 	public   void setLearnerSkills(String[] args) {
 		if (args[1].equals("t"))
 			Zha.learnerDecompL.setSelected(true);

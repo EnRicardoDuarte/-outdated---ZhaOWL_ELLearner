@@ -26,6 +26,8 @@ import org.zhaowl.userInterface.ELEngine;
 import org.zhaowl.userInterface.ELInterface;
 import org.zhaowl.utils.SimpleClass;
 
+import uk.ac.manchester.cs.owl.owlapi.mansyntaxrenderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
+
 public class ELLearner {
 
 	public OWLReasoner reasonerForH;
@@ -34,15 +36,17 @@ public class ELLearner {
 	public OWLOntology ontology;
 	public ELEngine engineForT;
 	public ELInterface elinterface;
+	public ManchesterOWLSyntaxOWLObjectRendererImpl rendering;
 
 	public ELLearner(OWLReasoner reasoner, ShortFormProvider shortForm, OWLOntology ontology, OWLOntology ontologyH,
-			ELEngine engineT, ELInterface elinterface) {
+			ELEngine engineT, ELInterface elinterface, ManchesterOWLSyntaxOWLObjectRendererImpl rendering) {
 		this.reasonerForH = reasoner;
 		this.shortFormProvider = shortForm;
 		this.ontology = ontology;
 		this.ontologyH = ontologyH;
 		this.engineForT = engineT;
 		this.elinterface = elinterface;
+		this.rendering = rendering;
 	}
 
 	public OWLReasoner createReasoner(final OWLOntology rootOntology) {
@@ -327,7 +331,7 @@ public class ELLearner {
 					if (newEx.equals(null))
 						System.out.println("is null");
 					newAx = engineForT.getSubClassAxiom(sub, newEx);
-					count++;
+					
 					// check if hypothesis entails new saturated CI
 					elinterface.membCount++;
 
@@ -341,7 +345,34 @@ public class ELLearner {
 					}
 
 				}
-
+				// node post processing
+				ELTree treeOnLeft;
+				ELTree treeOnRight;
+				List<OWLClass> nodeLeft = new ArrayList<OWLClass>();
+				List<OWLClass> nodeRight = new ArrayList<OWLClass>();
+				for(OWLClass cl : nod.label)
+					nodeLeft.add(cl);
+				for(OWLClass cl : nod.label)
+					nodeRight.add(cl);
+				
+				
+				for(int j = 0; j < nod.label.size(); j ++)
+					for(int k = 0; k < nod.label.size(); k++)
+					{
+						if(j == k)
+							continue;
+						treeOnLeft = new ELTree(nodeLeft.get(j));
+						treeOnRight = new ELTree(nodeRight.get(k));
+						if(engineForT.entailed(engineForT.parseToOWLSubClassOfAxiom(treeOnLeft.toDescriptionString(), treeOnRight.toDescriptionString())))
+						{
+							nod.label.remove(nodeRight.get(k));
+						}
+						
+					}
+				treeOnLeft = null;
+				treeOnRight = null;
+				nodeLeft = null;
+				nodeRight = null;
 			}
 		}
 		// System.out.println("Tree: " + tree.getRootNode());

@@ -140,7 +140,6 @@ public class ELInterface extends JFrame {
 	public long timeEnd = 0;
 	private JLabel lblNewLabel_3;
 	public static void main(String[] args) {
-		if(args.equals(null))
 			EventQueue.invokeLater(new Runnable() {
 				public void run() {
 				try {
@@ -151,16 +150,7 @@ public class ELInterface extends JFrame {
 				}
 			}
 			});
-		else
-		{
-			try {
-				ELInterface obj = new ELInterface();
-				obj.consoleLaunch(args);
-			}catch(Exception e)
-			{
-				System.out.println("error intro " + e);
-			}
-		}
+		
 	}
 
 	/**
@@ -637,7 +627,7 @@ public class ELInterface extends JFrame {
 
 	public void learner() throws Throwable {
 		ELLearner learner = new ELLearner(reasonerForH, shortFormProvider, ontology, ontologyH, ELQueryEngineForT,
-				this);
+				this,rendering);
 
 		// we get a counter example from oracle
 		// while () {
@@ -659,7 +649,7 @@ public class ELInterface extends JFrame {
 				equivCount++;
 				doCE();
 			}
-			System.out.println(rendering.render(lastCE));
+			//System.out.println(rendering.render(lastCE));
 
 			OWLClassExpression left = null;
 			OWLClassExpression right = null;
@@ -1301,7 +1291,7 @@ public class ELInterface extends JFrame {
 					if (newCounterexampleAxiom != null) {
 						// if we actually got something, we use it as new counter example
 
-						System.out.println("subclass 1");
+						//System.out.println("subclass 1");
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						// ADD SATURATION FOR newCounterexampleAxiom HERE
 						OWLClassExpression ex = null;
@@ -1378,7 +1368,7 @@ public class ELInterface extends JFrame {
 							Boolean querySubClassforT = ELQueryEngineForT.entailed(newCounterexampleAxiom);
 							if (!querySubClass && querySubClassforT) {
 
-								System.out.println("eq 1");
+								//System.out.println("eq 1");
 								// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 								// ADD SATURATION FOR newCounterexampleAxiom HERE
 								OWLClassExpression ex = null;
@@ -1452,7 +1442,7 @@ public class ELInterface extends JFrame {
 
 					if (!queryAns) {
 						lastCE = selectedAxiom;
-						System.out.println("subclass 2");
+						//System.out.println("subclass 2");
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						// ADD SATURATION FOR Axiom HERE
 						OWLClassExpression ex = null;
@@ -1513,7 +1503,7 @@ public class ELInterface extends JFrame {
 						Boolean queryAns = ELQueryEngineForH.entailed(subClassAxiom);
 						if (!queryAns) {
 							lastCE = subClassAxiom;
-							System.out.println("eqcl 2");
+							//System.out.println("eqcl 2");
 							// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 							// ADD SATURATION FOR subClassAxiom HERE
 							OWLClassExpression ex = null;
@@ -1713,7 +1703,7 @@ public class ELInterface extends JFrame {
 					message = "The axiom [" + removedstring + "]" + "will be removed after adding: \n["
 							+ rendering.render(addedAxiom) + "]";
 				}
-				System.out.println(message);
+				//System.out.println(message);
 				// JOptionPane.showMessageDialog(null, message, "Alert",
 				// JOptionPane.INFORMATION_MESSAGE);
 			}
