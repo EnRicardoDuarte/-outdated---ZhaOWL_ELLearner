@@ -18,21 +18,24 @@ public class consoleLearner {
 		 * 
 		 * src/main/resources/ontologies/SMALL/animals.owl
 		 * 
-		 * [1] = mode, if "on" then ez
+		 * [1] = mode, if "on" then easy mode is selected which overrides oracle skills
 		 * 			   if "off" then normal mode AND allows for oracle
 		 * 
-		 * args[2:7] = learner skills 
+		 * LEARNER SKILLS
 		 * [2] = decompose left 
 		 * [3] = branch left 
 		 * [4] = unsaturate left 
+		 *
 		 * [5] = decompose right 
 		 * [6] = merge right 
 		 * [7] = saturate right
 		 * 
-		 * [8] = unsaturate left 
-		 * [9] = decompose right 
-		 * [10] = merge right 
-		 * [11] = saturate right
+		 *
+		 * ORACLE SKILLS
+		 * [8] = merge left 
+		 * [9] = saturate left 
+		 * [10] = branch right 
+		 * [11] = unsaturate right
 		 * 
 		 * 
 		 * ----- OUTPUT aside from some console metrics (number of equivalence queries
@@ -41,6 +44,18 @@ public class consoleLearner {
 		 * program
 		 * 
 		 */
+		/*
+		
+		if we want to run ez mode, animals ontology, all learner skills and no oracle skills
+		
+		java -jar consoleLearner.jar src/main/resources/ontologies/SMALL/animals.owl on t t t t t t f f f f
+		@Param
+		ontology to load = src/main/resources/ontologies/SMALL/animals.owl 
+		easy mode = on //// this overrides any oracle skills
+		learner skills (see above for details) = t t t t t t 
+		oracle skills (see above for details) = f f f f
+		
+		*/
 		
 		consoleLearner maker = new consoleLearner();  
 		//maker.setValues(args);
