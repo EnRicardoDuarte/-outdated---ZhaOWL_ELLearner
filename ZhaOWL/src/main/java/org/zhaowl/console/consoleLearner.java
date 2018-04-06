@@ -82,9 +82,9 @@ public class consoleLearner {
 				Zha.learner();
 				System.out.println("Total membership queries: " + Zha.membCount); 
 				System.out.println("Total equivalence queries: " + Zha.equivCount);
-				System.out.println("Target TBox logical axioms: " + Zha.axiomsT.size());
+				System.out.println("Target TBox inclusions: " + Zha.axiomsT.size());
 				Zha.showCIT(Zha.axiomsT);
-				System.out.println("Hypothesis TBox logical axioms: " + Zha.ontologyH.getAxioms().size()); 
+				System.out.println("Hypothesis TBox inclusions: " + Zha.ontologyH.getAxioms().size()); 
 				Zha.showCIH(Zha.ontologyH.getAxioms());
 				
 			} catch (Throwable e) {
