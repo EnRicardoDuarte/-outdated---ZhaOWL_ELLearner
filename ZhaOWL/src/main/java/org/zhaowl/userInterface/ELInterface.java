@@ -62,23 +62,6 @@ public class ELInterface extends JFrame {
 	 * Launch the application.
 	 */
 
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					ELInterface frame = new ELInterface();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
-
-	/**
-	 * Create the frame.
-	 */
-
 	// ************ START FRAME SPECIFIC VARIABLES ********************* //
 	public JList list = new JList();
 	public JTextArea hypoField = new JTextArea();
@@ -106,12 +89,11 @@ public class ELInterface extends JFrame {
 	public JCheckBox learnerUnsat;
 	public JCheckBox learnerBranch;
 	public JCheckBox learnerDecompR;
-
 	public JCheckBox ezBox;
 	public JCheckBox autoBox = new JCheckBox("Auto learn [might take some moments]");
 	public JCheckBox fileLoad;
 	private final JScrollPane scrollPane_1 = new JScrollPane();
-	private JTextField filePath;
+	public JTextField filePath;
 
 	// ************ END FRAME SPECIFIC VARIABLES ********************* //
 
@@ -145,10 +127,103 @@ public class ELInterface extends JFrame {
 	public OWLAxiom smallestOne = null;
 	public int smallestSize = 0;
 	// ************ END OWL SPECIFIC VARIABLES ********************* //
+	
+	
+
+	// ************ START CONSOLE SPECIFIC VARIABLES ********************* //
+
+	public boolean consoleLoad = false;
+	public String consoleOntologyPath = "";
+	
+	// ************* END CONSOLE SPECIFIC VARIABLES ********************* //
 	public long timeStart = 0;
 	public long timeEnd = 0;
 	private JLabel lblNewLabel_3;
+	public static void main(String[] args) {
+		if(args.equals(null))
+			EventQueue.invokeLater(new Runnable() {
+				public void run() {
+				try {
+					ELInterface frame = new ELInterface();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			});
+		else
+		{
+			try {
+				ELInterface obj = new ELInterface();
+				obj.consoleLaunch(args);
+			}catch(Exception e)
+			{
+				System.out.println("error intro " + e);
+			}
+		}
+	}
 
+	/**
+	 * Create the frame.
+	 */
+
+	public void consoleLaunch(String[] args)
+	{
+		fileLoad.setSelected(true);
+		filePath.setText(args[0]);
+		setLearnerSkills(args);
+		try {
+			loadOntology();
+			try {
+				learner();
+			} catch (Throwable e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("Total membership queries: " + membCount); 
+		System.out.println("Total equivalence queries: " + equivCount);
+		System.out.println("Target TBox size: " + axiomsT.size());
+		System.out.println("Hypothesis TBox size: " + ontologyH.getAxioms().size());
+	}
+	
+	 
+	public void setLearnerSkills(String[] args)
+	{
+		if (args[1].equals("t"))
+			learnerDecompL.setSelected(true);
+		else
+			learnerDecompL.setSelected(false);
+
+		if (args[2].equals("t"))
+			learnerBranch.setSelected(true);
+		else
+			learnerBranch.setSelected(false);
+
+		if (args[3].equals("t"))
+			learnerUnsat.setSelected(true);
+		else
+			learnerUnsat.setSelected(false);
+
+		if (args[4].equals("t"))
+			learnerDecompR.setSelected(true);
+		else
+			learnerDecompR.setSelected(false);
+
+		if (args[5].equals("t"))
+			learnerMerge.setSelected(true);
+		else
+			learnerMerge.setSelected(false);
+
+		if (args[6].equals("t"))
+			learnerSat.setSelected(true);
+		else
+			learnerSat.setSelected(false);
+	}
+	
 	public ELInterface() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setBounds(100, 100, 877, 518);
@@ -437,6 +512,10 @@ public class ELInterface extends JFrame {
 		lblNewLabel_3.setBounds(10, 316, 105, 14);
 		contentPane.add(lblNewLabel_3);
 
+		JCheckBox liyiBox = new JCheckBox("Concept weakening");
+		liyiBox.setBounds(549, 165, 174, 23);
+		contentPane.add(liyiBox);
+
 	}
 
 	public void showCIT(Set<OWLAxiom> axSet) {
@@ -447,8 +526,8 @@ public class ELInterface extends JFrame {
 		int ontSize = 0;
 		int totalSize = 0;
 		for (OWLAxiom axe : axiomsT) {
-			 
-			if(axe.toString().contains("Thing"))
+
+			if (axe.toString().contains("Thing"))
 				continue;
 			String inclusion = rendering.render(axe);
 			inclusion = inclusion.replaceAll(" and ", " ");
@@ -478,7 +557,7 @@ public class ELInterface extends JFrame {
 				}
 			}
 			ontSize += totalSize;
-		 	sumSize += totalSize;
+			sumSize += totalSize;
 			// System.out.println("Size of : " + rendering.render(axe) + "." + totalSize);
 			// System.out.println("Size of : " + inclusion + "." + totalSize);
 		}
@@ -488,6 +567,7 @@ public class ELInterface extends JFrame {
 		System.out.println("Avg: " + sumSize / axiomsT.size());
 
 	}
+
 	public void showCIH(Set<OWLAxiom> axSet) {
 		int avgSize = 0;
 		int sumSize = 0;
@@ -496,8 +576,8 @@ public class ELInterface extends JFrame {
 		int ontSize = 0;
 		int totalSize = 0;
 		for (OWLAxiom axe : ontologyH.getAxioms()) {
-			 
-			if(axe.toString().contains("Thing"))
+
+			if (axe.toString().contains("Thing"))
 				continue;
 			String inclusion = rendering.render(axe);
 			inclusion = inclusion.replaceAll(" and ", " ");
@@ -564,12 +644,13 @@ public class ELInterface extends JFrame {
 		if (autoBox.isSelected()) {
 			showQueryCount();
 			hypoField.setText(showHypothesis());
+
 			if (equivalenceQuery()) {
 				victory();
 				timeEnd = System.currentTimeMillis();
 				System.out.println("Total time (ms): " + (timeEnd - timeStart));
 				lastCE = null;
-				
+				learner = null;
 				return;
 			} else if (ezBox.isSelected()) {
 				equivCount++;
@@ -587,8 +668,12 @@ public class ELInterface extends JFrame {
 				left = ((OWLSubClassOfAxiom) lastCE).getSubClass();
 				right = ((OWLSubClassOfAxiom) lastCE).getSuperClass();
 			} else {
+
+				learner = null;
 				learner();
+
 				return;
+
 			}
 			lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
 			// check if complex side is left
@@ -608,7 +693,7 @@ public class ELInterface extends JFrame {
 					left = learner.branchLeft(left, right);
 				}
 				lastCE = ELQueryEngineForT.getSubClassAxiom(left, right);
-				
+
 				// unsaturate removes useless concepts from nodes in the inclusion
 				if (learnerUnsat.isSelected()) {
 					// System.out.println("lhs unsaturate");
@@ -647,12 +732,14 @@ public class ELInterface extends JFrame {
 				try {
 					addHypothesis(lastCE);
 					hypoField.setText(showHypothesis());
+
+					learner = null;
 				} catch (Exception e2) {
 					e2.printStackTrace();
 				}
 			}
 			learner();
-		/*} else {
+		} else {
 			if (equivalenceQuery()) {
 				victory();
 				timeEnd = System.currentTimeMillis();
@@ -728,9 +815,11 @@ public class ELInterface extends JFrame {
 				} catch (Exception e2) {
 					e2.printStackTrace();
 				}
-			}*/
+			}
 		}
 		// }
+
+		learner = null;
 		showQueryCount();
 
 	}
@@ -860,7 +949,100 @@ public class ELInterface extends JFrame {
 	}
 
 	public void loadOntology() throws InterruptedException {
-		win = false;
+		win = false; 
+		if(consoleLoad)
+		{
+			try {
+				equivCount = 0;
+				membCount = 0;
+				hypoField.setText("");
+				
+				manager = OWLManager.createOWLOntologyManager();
+				
+					ontology = manager
+							.loadOntologyFromOntologyDocument(new File(consoleOntologyPath));
+				
+				rendering = new ManchesterOWLSyntaxOWLObjectRendererImpl();
+
+				reasonerForT = createReasoner(ontology);
+				shortFormProvider = new SimpleShortFormProvider();
+				axiomsT = new HashSet<OWLAxiom>();
+				for (OWLAxiom axe : ontology.getAxioms())
+					if (!axe.toString().contains("Thing") && axe.isOfType(AxiomType.SUBCLASS_OF)
+							|| axe.isOfType(AxiomType.EQUIVALENT_CLASSES))
+						axiomsT.add(axe);
+
+				lastCE = null;
+
+				ELQueryEngineForT = new ELEngine(reasonerForT, shortFormProvider);
+				// transfer Origin ontology to ManchesterOWLSyntaxOntologyFormat
+				OWLOntologyFormat format = manager.getOntologyFormat(ontology);
+				ManchesterOWLSyntaxOntologyFormat manSyntaxFormat = new ManchesterOWLSyntaxOntologyFormat();
+				if (format.isPrefixOWLOntologyFormat()) {
+					manSyntaxFormat.copyPrefixesFrom(format.asPrefixOWLOntologyFormat());
+				}
+				format = null;
+				// create personalized names for ontology
+				ontologyFolderH = "src/main/resources/tmp/";
+				ontologyFolder = "src/main/resources/tmp/";
+				ontologyName = "";
+				getOntologyName();
+
+				{ // save ontologies
+					newFile = new File(ontologyFolder);
+					hypoFile = new File(ontologyFolderH);
+					// save owl file as a new file in different location
+					if (newFile.exists()) {
+						newFile.delete();
+					}
+					newFile.createNewFile();
+					manager.saveOntology(ontology, manSyntaxFormat, IRI.create(newFile.toURI()));
+
+					// Create OWL Ontology Manager for hypothesis and load hypothesis file
+					if (hypoFile.exists()) {
+						hypoFile.delete();
+					}
+					hypoFile.createNewFile();
+
+					ontologyH = manager.loadOntologyFromOntologyDocument(hypoFile);
+				}
+
+				shortFormProvider = new SimpleShortFormProvider();
+				axiomsH = ontologyH.getAxioms();
+				loadedOnto.setText("Ontology loaded.");
+				wePlayin = true;
+
+				System.out.println(ontology);
+				System.out.println("Loaded successfully.");
+				System.out.println();
+
+				concepts = new SimpleClass(rendering).getSuggestionNames("concept", newFile);
+				roles = new SimpleClass(rendering).getSuggestionNames("role", newFile);
+
+				System.out.println("Total number of concepts is: " + concepts.size());
+
+				SimpleClass simpleObject = new SimpleClass(rendering);
+				int[] mins = simpleObject.showCISizes(axiomsT);
+
+				smallestSize = mins[0];
+				// System.out.println(mins[0]);
+				// System.out.println(smallestSize);
+				// showCISizes(axiomsT);
+				smallestCI.setText("Target smallest CI size: " + smallestSize);
+				averageCI.setText("Target average CI size: " + mins[1]);
+
+				mins = null;
+
+				System.out.flush();
+			} catch (OWLOntologyCreationException e) {
+				System.out.println("Could not load ontology: " + e.getMessage());
+			} catch (OWLException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			return;
+		}
 		if (!fileLoad.isSelected()) {
 			try {
 				equivCount = 0;
@@ -869,6 +1051,7 @@ public class ELInterface extends JFrame {
 				memberCount.setText("Total membership queries: 0");
 				equivalenceCount.setText("Total equivalence queries: 0");
 				manager = OWLManager.createOWLOntologyManager();
+				System.out.println("Trying to load");
 				if (list.getSelectedIndex() == 0)
 					ontology = manager
 							.loadOntologyFromOntologyDocument(new File("src/main/resources/ontologies/animals.owl"));
@@ -968,9 +1151,7 @@ public class ELInterface extends JFrame {
 			try {
 				equivCount = 0;
 				membCount = 0;
-				hypoField.setText("");
-				memberCount.setText("Total membership queries: 0");
-				equivalenceCount.setText("Total equivalence queries: 0");
+				hypoField.setText(""); 
 				manager = OWLManager.createOWLOntologyManager();
 
 				ontology = manager.loadOntologyFromOntologyDocument(new File(filePath.getText()));
@@ -1106,7 +1287,7 @@ public class ELInterface extends JFrame {
 				Boolean queryAns = ELQueryEngineForH.entailed(selectedAxiom);
 				// if hypothesis does NOT entail the CI
 				if (!queryAns) {
-
+					System.out.println("Chosen CE:" + rendering.render(selectedAxiom));
 					OWLSubClassOfAxiom counterexample = (OWLSubClassOfAxiom) selectedAxiom;
 					OWLClassExpression subclass = counterexample.getSubClass();
 					OWLClassExpression superclass = counterexample.getSuperClass();
@@ -1148,8 +1329,8 @@ public class ELInterface extends JFrame {
 							}
 							if (oracleUnsaturate.isSelected()) {
 								ex = null;
-								//ex = oracle.unsaturateRight(newCounterexampleAxiom);
-								//newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex, superclass);
+								// ex = oracle.unsaturateRight(newCounterexampleAxiom);
+								// newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex, superclass);
 								ex = null;
 							}
 						}
@@ -1227,8 +1408,10 @@ public class ELInterface extends JFrame {
 									}
 									if (oracleUnsaturate.isSelected()) {
 										ex = null;
-										//ex = oracle.unsaturateRight(newCounterexampleAxiom);
-										//newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom) newCounterexampleAxiom).getSuperClass());
+										// ex = oracle.unsaturateRight(newCounterexampleAxiom);
+										// newCounterexampleAxiom =
+										// ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom)
+										// newCounterexampleAxiom).getSuperClass());
 										ex = null;
 									}
 								}
@@ -1298,8 +1481,10 @@ public class ELInterface extends JFrame {
 							}
 							if (oracleUnsaturate.isSelected()) {
 								ex = null;
-								//ex = oracle.unsaturateRight((OWLSubClassOfAxiom) selectedAxiom);
-								//selectedAxiom = (OWLSubClassOfAxiom) ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom) selectedAxiom).getSuperClass());
+								// ex = oracle.unsaturateRight((OWLSubClassOfAxiom) selectedAxiom);
+								// selectedAxiom = (OWLSubClassOfAxiom)
+								// ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom)
+								// selectedAxiom).getSuperClass());
 								ex = null;
 							}
 
@@ -1357,8 +1542,10 @@ public class ELInterface extends JFrame {
 								}
 								if (oracleUnsaturate.isSelected()) {
 									ex = null;
-									//ex = oracle.unsaturateRight((OWLSubClassOfAxiom) subClassAxiom);
-									//subClassAxiom = (OWLSubClassOfAxiom) ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom) subClassAxiom).getSuperClass());
+									// ex = oracle.unsaturateRight((OWLSubClassOfAxiom) subClassAxiom);
+									// subClassAxiom = (OWLSubClassOfAxiom)
+									// ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom)
+									// subClassAxiom).getSuperClass());
 									ex = null;
 								}
 							}
@@ -1430,11 +1617,11 @@ public class ELInterface extends JFrame {
 				}
 			}
 		}
- 
-		ELQueryEngineForH = null; 
+
+		ELQueryEngineForH = null;
 		superclass = null;
-		subclass = null;   
-		reasonerForH.dispose(); 
+		subclass = null;
+		reasonerForH.dispose();
 		return null;
 	}
 

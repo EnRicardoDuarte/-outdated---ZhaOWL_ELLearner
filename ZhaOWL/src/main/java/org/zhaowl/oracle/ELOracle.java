@@ -27,14 +27,14 @@ import org.zhaowl.userInterface.ELInterface;
 import org.zhaowl.utils.SimpleClass;
 
 public class ELOracle {
-	public OWLReasoner reasonerForH;
-	public ShortFormProvider shortFormProvider;
-	public OWLOntology ontologyH;
-	public OWLOntology ontology;
-	public ELEngine engineForT;
-	public ELInterface elinterface;
+	public   OWLReasoner reasonerForH;
+	public   ShortFormProvider shortFormProvider;
+	public   OWLOntology ontologyH;
+	public   OWLOntology ontology;
+	public    ELEngine engineForT;
+	public   ELInterface elinterface;
 
-	public ELOracle(OWLReasoner reasoner, ShortFormProvider shortForm, OWLOntology ontology, OWLOntology ontologyH,
+	public   ELOracle(OWLReasoner reasoner, ShortFormProvider shortForm, OWLOntology ontology, OWLOntology ontologyH,
 			ELEngine engineT, ELInterface elinterface) {
 		this.reasonerForH = reasoner;
 		this.shortFormProvider = shortForm;
@@ -44,11 +44,11 @@ public class ELOracle {
 		this.elinterface = elinterface;
 	}
 
-	public OWLReasoner createReasoner(final OWLOntology rootOntology) {
+	public   OWLReasoner createReasoner(final OWLOntology rootOntology) {
 		return new Reasoner.ReasonerFactory().createReasoner(rootOntology);
 	}
 
-	public OWLClassExpression oracleSiblingMerge(OWLClassExpression left, OWLClassExpression right) throws Exception {
+	public  OWLClassExpression oracleSiblingMerge(OWLClassExpression left, OWLClassExpression right) throws Exception {
 		// the oracle must do sibling merging (if possible)
 		// on the left hand side
 		ELTree tree = new ELTree(left);
@@ -103,7 +103,7 @@ public class ELOracle {
 		return engineForT.parseClassExpression(tree.toDescriptionString());
 	}
 
-	public Set<Set<OWLClass>> powerSetBySize(Set<OWLClass> originalSet, int size) {
+	public   Set<Set<OWLClass>> powerSetBySize(Set<OWLClass> originalSet, int size) {
 		Set<Set<OWLClass>> sets = new HashSet<Set<OWLClass>>();
 		if (size == 0) {
 			sets.add(new HashSet<OWLClass>());
@@ -125,7 +125,7 @@ public class ELOracle {
 		return sets;
 	}
 
-	public OWLAxiom saturateWithTreeLeft(OWLSubClassOfAxiom axiom) throws Exception {
+	public   OWLAxiom saturateWithTreeLeft(OWLSubClassOfAxiom axiom) throws Exception {
 		OWLClassExpression sub = ((OWLSubClassOfAxiom) axiom).getSubClass();
 		OWLClassExpression sup = ((OWLSubClassOfAxiom) axiom).getSuperClass();
 
@@ -173,7 +173,7 @@ public class ELOracle {
 		return engineForT.getSubClassAxiom(sub, sup);
 	}
 	
-	public OWLClassExpression unsaturateRight(OWLAxiom ax) throws Exception {
+	public   OWLClassExpression unsaturateRight(OWLAxiom ax) throws Exception {
 		OWLClassExpression left = ((OWLSubClassOfAxiom) ax).getSubClass();
 		OWLClassExpression right = ((OWLSubClassOfAxiom) ax).getSuperClass();
 		ELTree tree = null;
@@ -274,106 +274,8 @@ public class ELOracle {
 		nodes = null;
 		return ex;
 	}
-/*	public OWLClassExpression unsaturateRight(OWLAxiom ax) throws Exception {
-		OWLClassExpression left = ((OWLSubClassOfAxiom) ax).getSubClass();
-		OWLClassExpression right = ((OWLSubClassOfAxiom) ax).getSuperClass();
-		ELTree tree = null;
-		tree = new ELTree(right);
 
-		Set<ELNode> nodes = null;
-
-		reasonerForH = createReasoner(ontologyH);
-
-		OWLReasoner reasonerForT = createReasoner(ontology);
-		engineForT = new ELEngine(reasonerForT, shortFormProvider);
-
-		int sizeToCheck = 0;
-
-		// @foundSomething
-		// this flag is used to create a new set of elements to iterate over,
-		// in order to find if a proper combination of concepts that a node needs
-		// in order to make the CI valid
-
-		boolean foundSomething = false;
-
-		for (int i = 0; i < tree.getMaxLevel(); i++) {
-			nodes = tree.getNodesOnLevel(i + 1);
-			for (ELNode nod : nodes) {
-
-				while (!foundSomething) {
-					// size of power set
-					sizeToCheck++;
-					// set to be used when building a power set of concepts
-					Set<OWLClass> toBuildPS = new HashSet<OWLClass>();
-
-					// populate set
-					for (OWLClass cl : nod.label)
-						toBuildPS.add(cl);
-
-					// set of sets of concepts as power set
-					Set<Set<OWLClass>> conceptSet = new HashSet<Set<OWLClass>>();
-
-					// populate set of sets of concepts
-					// @sizeToCheck is the number of concepts in the set
-					// @sizeToCheck = 1, returns single concepts in power set (ps) [A,B,C,D]
-					// @sizeToCheck = 2, returns ps size 2 of concepts [(A,B), (A,C), (A,D), (B,C),
-					// (B,D), (C,D)]
-					// and so on ...
-					// this is done in order to check which is the minimal concept(s) set required
-					// to satisfy the node
-					// and at the same time, the CI
-					conceptSet = powerSetBySize(toBuildPS, sizeToCheck);
-
-					// loop through concept set
-					for (Set<OWLClass> clSet : conceptSet) {
-
-						nod.label = new TreeSet<OWLClass>();
-
-						for (OWLClass cl : clSet)
-							nod.label.add(cl);
-
-						elinterface.membCount++;
-
-						// System.out.println(tree.toDescriptionString());
-						if (engineForT.entailed(engineForT.parseToOWLSubClassOfAxiom(
-								(new ELTree(left)).toDescriptionString(), tree.toDescriptionString()))) {
-							try {
-								foundSomething = true;
-								
-								elinterface.addHypothesis(engineForT.parseToOWLSubClassOfAxiom(
-										(new ELTree(left).toDescriptionString()), tree.toDescriptionString()));
-								elinterface.hypoField.setText(elinterface.showHypothesis());
-							} catch (Exception e2) {
-								e2.printStackTrace();
-							}
-							// System.out.println("this one: " + cl);
-
-							// nod.label = new TreeSet<OWLClass>();
-						} else {
-							// System.out.println("This one is bad: " + cl);
-							continue;
-
-						}
-
-					}
-
-				}
-				// reset power set size to check
-				foundSomething = false;
-				sizeToCheck = 0;
-			}
-		}
-		elinterface.showQueryCount();
-
-		OWLClassExpression ex = engineForT.parseClassExpression(tree.toDescriptionString());
-		tree = null;
-		nodes = null;
-		engineForT = null;
-		reasonerForH.dispose();
-		return ex;
-	}
-*/
-	public OWLClassExpression branchRight(OWLClassExpression left, OWLClassExpression right) {
+	public   OWLClassExpression branchRight(OWLClassExpression left, OWLClassExpression right) {
 		try {
 
 			ELTree treeR = new ELTree(right);

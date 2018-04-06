@@ -298,6 +298,7 @@ public class ELLearner {
 	}
 
 	public int count = 0;
+
 	public OWLAxiom saturateWithTreeRight(OWLAxiom axiom) throws Exception {
 		OWLClassExpression sub = ((OWLSubClassOfAxiom) axiom).getSubClass();
 		OWLClassExpression sup = ((OWLSubClassOfAxiom) axiom).getSuperClass();
@@ -311,37 +312,37 @@ public class ELLearner {
 		OWLAxiom newAx = null;
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
-			//if (!nodes.isEmpty())
-				for (ELNode nod : nodes) {
-					// maxSaturate = 3;
-					for (OWLClass cl : cIo) {
-						// System.out.println("Node before: " + nod);
-						// if(maxSaturate == 0)
-						// break;
-						if (!nod.label.contains(cl) && !cl.toString().contains(":Thing")) {
-							nod.label.add(cl);
-						}
+			// if (!nodes.isEmpty())
+			for (ELNode nod : nodes) {
+				// maxSaturate = 3;
+				for (OWLClass cl : cIo) {
+					// System.out.println("Node before: " + nod);
+					// if(maxSaturate == 0)
+					// break;
+					if (!nod.label.contains(cl) && !cl.toString().contains(":Thing")) {
+						nod.label.add(cl);
+					}
 
-						OWLClassExpression newEx = engineForT.parseClassExpression(tree.toDescriptionString());
-						if (newEx.equals(null))
-							System.out.println("is null");
-						newAx = engineForT.getSubClassAxiom(sub, newEx);
-						count ++;
-						// check if hypothesis entails new saturated CI
-						elinterface.membCount++;
-						
-						if (engineForT.entailed(newAx)) {
-							// CI is entailed by H, roll tree back to "safe" CI
-							
-							tree = new ELTree(sup);
-						} else {
+					OWLClassExpression newEx = engineForT.parseClassExpression(tree.toDescriptionString());
+					if (newEx.equals(null))
+						System.out.println("is null");
+					newAx = engineForT.getSubClassAxiom(sub, newEx);
+					count++;
+					// check if hypothesis entails new saturated CI
+					elinterface.membCount++;
 
-							sup = engineForT.parseClassExpression(tree.toDescriptionString());
-						}
+					if (engineForT.entailed(newAx)) {
+						// CI is entailed by H, roll tree back to "safe" CI
 
+						tree = new ELTree(sup);
+					} else {
+
+						sup = engineForT.parseClassExpression(tree.toDescriptionString());
 					}
 
 				}
+
+			}
 		}
 		// System.out.println("Tree: " + tree.getRootNode());
 		// System.out.println("Aux Tree: " + auxTree.getRootNode());
@@ -353,8 +354,7 @@ public class ELLearner {
 		} catch (Exception e2) {
 			e2.printStackTrace();
 		}
-		System.out.println("Total membq for " + axiom + "\n--- " + count);
-		tree = null;
+		 tree = null;
 		newAx = null;
 		cIo = null;
 		nodes = null;
@@ -475,15 +475,19 @@ public class ELLearner {
 							auxEdges.get(j).node.label.remove(classAux.get(k));
 
 							// check target for entailment of new tree
-							
-							 if(engineForT.entailed(engineForT.getSubClassAxiom(engineForT.
-							 parseClassExpression(treeL.toDescriptionString()), right))) { // tree isvalid, update auxiliar tree 
-								 continue; 
-								 
-							 } else { // tree is invalid, rollback
-							  nod.edges.remove(nod.edges.size()-1);
-							  nod.edges.get(j).node.label.add(classAux.get(k)); // 
-							 }
+
+							if (engineForT.entailed(engineForT.getSubClassAxiom(
+									engineForT.parseClassExpression(treeL.toDescriptionString()), right))) { // tree
+																												// isvalid,
+																												// update
+																												// auxiliar
+																												// tree
+								continue;
+
+							} else { // tree is invalid, rollback
+								nod.edges.remove(nod.edges.size() - 1);
+								nod.edges.get(j).node.label.add(classAux.get(k)); //
+							}
 						}
 					}
 				}

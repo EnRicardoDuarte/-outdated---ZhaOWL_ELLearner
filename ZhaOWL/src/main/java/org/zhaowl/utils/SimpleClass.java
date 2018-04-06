@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.Set;
 
 import org.semanticweb.owlapi.model.OWLAxiom;
+import org.semanticweb.owlapi.model.OWLClass;
 import org.semanticweb.owlapi.model.OWLClassExpression;
-import org.semanticweb.owlapi.model.OWLOntology;
 
 import uk.ac.manchester.cs.owl.owlapi.mansyntaxrenderer.ManchesterOWLSyntaxOWLObjectRendererImpl;
 
@@ -76,6 +76,17 @@ public class SimpleClass {
 		return names;
 	}
 	
+	
+	public void postProcessing(Set<OWLClass> axioms)
+	{
+		try
+		{
+			
+		}catch(Exception e)
+		{
+			
+		}
+	}
 	
 	public int[] showCISizes(Set<OWLAxiom> axSet)
 	{
