@@ -5,18 +5,35 @@ import org.zhaowl.settings.*;
 public class consoleLearner {
 
 	public   String ontologyPath;
-	public   ELInterface Zha ;
-	public String[] values = new String[7];
+	public   ELInterface Zha ; 
 	
 	public static void main(String[] args) {
 		// TODO Auto-generated method stub
 
 		/*
-		 * ----- program is set to try EZ (naive teacher) by default, since console is
-		 * set for ----- large ontologies, which should not use oracle skills at all 7
-		 * parameters args[0] = ontology path args[1:6] = learner skills [1] = decompose
-		 * left [2] = branch left [3] = unsaturate left [4] = decompose right [5] =
-		 * merge right [6] = saturate right
+		 * ----- 
+		 * [0] ontology path
+		 * if jar file is in project folder [ZhaOWL]
+		 * then you specify the small ontology for animals as
+		 * 
+		 * src/main/resources/ontologies/SMALL/animals.owl
+		 * 
+		 * [1] = mode, if "on" then ez
+		 * 			   if "off" then normal mode AND allows for oracle
+		 * 
+		 * args[2:7] = learner skills 
+		 * [2] = decompose left 
+		 * [3] = branch left 
+		 * [4] = unsaturate left 
+		 * [5] = decompose right 
+		 * [6] = merge right 
+		 * [7] = saturate right
+		 * 
+		 * [8] = unsaturate left 
+		 * [9] = decompose right 
+		 * [10] = merge right 
+		 * [11] = saturate right
+		 * 
 		 * 
 		 * ----- OUTPUT aside from some console metrics (number of equivalence queries
 		 * and some other info) a new ontology file will be created in the folder of
@@ -30,29 +47,10 @@ public class consoleLearner {
 		maker.doIt(args);
 		
 
-	}
-	  
-	public void setValues(String[] vals)
-	{
-		values[0] = vals[0];
-		values[1] = vals[1];
-		values[2] = vals[2];
-		values[3] = vals[3];
-		values[4] = vals[4];
-		values[5] = vals[5];
-		values[6] = vals[6];
-	}
-	
+	} 
 	public   void doIt(String[] args) {  
 		
-		/*args = new String[7];
-		args[0] = "src/main/resources/ontologies/MEDIUM/space.owl";
-		args[1] = "";
-		args[2] = "";
-		args[3] = "";
-		args[4] = "";
-		args[5] = "";
-		args[6] = "t";*/
+		 
 		try {
 			
 			Zha = new ELInterface();
@@ -63,8 +61,12 @@ public class consoleLearner {
 			// ontology from parameters
 			Zha.filePath.setText(args[0]);
 			
-			// set ez mode
-			Zha.ezBox.setSelected(true);
+			// set ez mode or normal mode
+			// normal mode allows for oracle skills
+			if(args[1].equals("on"))
+				Zha.ezBox.setSelected(true); // oracle skills not allowed
+			else
+				Zha.ezBox.setSelected(false);  // oracle skills allowed
 			
 			// set auto learn
 			Zha.autoBox.setSelected(true);
@@ -102,54 +104,54 @@ public class consoleLearner {
 
 	public void setOracleSkills(String[] args)
 	{
-		if (args[7].equals("t"))
+		if (args[8].equals("t"))
 			Zha.oracleMerge.setSelected(true);
 		else
 			Zha.oracleMerge.setSelected(false);
 
-		if (args[8].equals("t"))
+		if (args[9].equals("t"))
 			Zha.oracleSaturate.setSelected(true);
 		else
 			Zha.oracleSaturate.setSelected(false);
 
-		if (args[9].equals("t"))
+		if (args[10].equals("t"))
 			Zha.oracleBranch.setSelected(true);
 		else
 			Zha.oracleBranch.setSelected(false);
 
-		if (args[10].equals("t"))
+		if (args[11].equals("t"))
 			Zha.oracleUnsaturate.setSelected(true);
 		else
 			Zha.oracleUnsaturate.setSelected(false);
 	}
 	
 	public   void setLearnerSkills(String[] args) {
-		if (args[1].equals("t"))
+		if (args[2].equals("t"))
 			Zha.learnerDecompL.setSelected(true);
 		else
 			Zha.learnerDecompL.setSelected(false);
 
-		if (args[2].equals("t"))
+		if (args[3].equals("t"))
 			Zha.learnerBranch.setSelected(true);
 		else
 			Zha.learnerBranch.setSelected(false);
 
-		if (args[3].equals("t"))
+		if (args[4].equals("t"))
 			Zha.learnerUnsat.setSelected(true);
 		else
 			Zha.learnerUnsat.setSelected(false);
 
-		if (args[4].equals("t"))
+		if (args[5].equals("t"))
 			Zha.learnerDecompR.setSelected(true);
 		else
 			Zha.learnerDecompR.setSelected(false);
 
-		if (args[5].equals("t"))
+		if (args[6].equals("t"))
 			Zha.learnerMerge.setSelected(true);
 		else
 			Zha.learnerMerge.setSelected(false);
 
-		if (args[6].equals("t"))
+		if (args[7].equals("t"))
 			Zha.learnerSat.setSelected(true);
 		else
 			Zha.learnerSat.setSelected(false);
