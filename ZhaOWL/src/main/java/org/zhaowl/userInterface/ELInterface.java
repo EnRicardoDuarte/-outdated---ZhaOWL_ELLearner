@@ -352,8 +352,7 @@ public class ELInterface extends JFrame {
 		oracleSaturate.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				if (ezBox.isSelected())
-					ezBox.setSelected(false);
+				
 			}
 		});
 
@@ -434,8 +433,7 @@ public class ELInterface extends JFrame {
 		ezBox.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if (oracleSaturate.isSelected())
-					oracleSaturate.setSelected(false);
+				
 			}
 		});
 		ezBox.setBounds(485, 349, 366, 23);
@@ -501,10 +499,6 @@ public class ELInterface extends JFrame {
 		lblNewLabel_3 = new JLabel("[Small ontologies]");
 		lblNewLabel_3.setBounds(10, 316, 105, 14);
 		contentPane.add(lblNewLabel_3);
-
-		JCheckBox liyiBox = new JCheckBox("Concept weakening");
-		liyiBox.setBounds(549, 165, 174, 23);
-		contentPane.add(liyiBox);
 
 	}
 
@@ -629,6 +623,7 @@ public class ELInterface extends JFrame {
 		ELLearner learner = new ELLearner(reasonerForH, shortFormProvider, ontology, ontologyH, ELQueryEngineForT,
 				this,rendering);
 
+		//ELOracle oracle = new ELOracle(reasonerForH, shortFormProvider, ontology, ontologyH, ELQueryEngineForT, this);
 		// we get a counter example from oracle
 		// while () {
 		if (autoBox.isSelected()) {
@@ -672,6 +667,10 @@ public class ELInterface extends JFrame {
 				// decompose tries to find underlying inclusions inside the left hand side
 				// by recursively breaking the left expression and adding new inclusions to the
 				// hypothesis
+				/*if(oracleMerge.isSelected())
+					oracle.oracleSiblingMerge(left, right);
+				if(oracleSaturate.isSelected())
+					oracle.saturateWithTreeLeft(lastCE);*/
 				if (learnerDecompL.isSelected()) {
 					// System.out.println("lhs decomp");
 					learner.decompose(left, right);
@@ -1279,7 +1278,7 @@ public class ELInterface extends JFrame {
 				Boolean queryAns = ELQueryEngineForH.entailed(selectedAxiom);
 				// if hypothesis does NOT entail the CI
 				if (!queryAns) {
-					System.out.println("Chosen CE:" + rendering.render(selectedAxiom));
+					//System.out.println("Chosen CE:" + rendering.render(selectedAxiom));
 					OWLSubClassOfAxiom counterexample = (OWLSubClassOfAxiom) selectedAxiom;
 					OWLClassExpression subclass = counterexample.getSubClass();
 					OWLClassExpression superclass = counterexample.getSuperClass();
@@ -1291,6 +1290,7 @@ public class ELInterface extends JFrame {
 					if (newCounterexampleAxiom != null) {
 						// if we actually got something, we use it as new counter example
 
+						
 						//System.out.println("subclass 1");
 						// *-*-*-*-*-*-*-*-*-*-*-*-*-**-*-*-*-*-*-*-*-*-*-*-*-*-*
 						// ADD SATURATION FOR newCounterexampleAxiom HERE
@@ -1321,8 +1321,8 @@ public class ELInterface extends JFrame {
 							}
 							if (oracleUnsaturate.isSelected()) {
 								ex = null;
-								// ex = oracle.unsaturateRight(newCounterexampleAxiom);
-								// newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(ex, superclass);
+								 ex = oracle.unsaturateRight(newCounterexampleAxiom);
+								 newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(subclass, ex);
 								ex = null;
 							}
 						}
@@ -1400,10 +1400,9 @@ public class ELInterface extends JFrame {
 									}
 									if (oracleUnsaturate.isSelected()) {
 										ex = null;
-										// ex = oracle.unsaturateRight(newCounterexampleAxiom);
-										// newCounterexampleAxiom =
-										// ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom)
-										// newCounterexampleAxiom).getSuperClass());
+										 ex = oracle.unsaturateRight(newCounterexampleAxiom);
+										 newCounterexampleAxiom = ELQueryEngineForT.getSubClassAxiom(((OWLSubClassOfAxiom)
+										 newCounterexampleAxiom).getSubClass(),ex);
 										ex = null;
 									}
 								}
@@ -1473,10 +1472,10 @@ public class ELInterface extends JFrame {
 							}
 							if (oracleUnsaturate.isSelected()) {
 								ex = null;
-								// ex = oracle.unsaturateRight((OWLSubClassOfAxiom) selectedAxiom);
-								// selectedAxiom = (OWLSubClassOfAxiom)
-								// ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom)
-								// selectedAxiom).getSuperClass());
+								 ex = oracle.unsaturateRight((OWLSubClassOfAxiom) selectedAxiom);
+								 selectedAxiom = (OWLSubClassOfAxiom)
+								 ELQueryEngineForT.getSubClassAxiom(((OWLSubClassOfAxiom)
+								 selectedAxiom).getSubClass(), ex);
 								ex = null;
 							}
 
@@ -1534,10 +1533,10 @@ public class ELInterface extends JFrame {
 								}
 								if (oracleUnsaturate.isSelected()) {
 									ex = null;
-									// ex = oracle.unsaturateRight((OWLSubClassOfAxiom) subClassAxiom);
-									// subClassAxiom = (OWLSubClassOfAxiom)
-									// ELQueryEngineForT.getSubClassAxiom(ex,((OWLSubClassOfAxiom)
-									// subClassAxiom).getSuperClass());
+									 ex = oracle.unsaturateRight((OWLSubClassOfAxiom) subClassAxiom);
+									 subClassAxiom = (OWLSubClassOfAxiom)
+									 ELQueryEngineForT.getSubClassAxiom(((OWLSubClassOfAxiom)
+									 subClassAxiom).getSubClass(),ex);
 									ex = null;
 								}
 							}

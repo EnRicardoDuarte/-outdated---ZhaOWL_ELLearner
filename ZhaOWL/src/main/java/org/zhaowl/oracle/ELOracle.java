@@ -173,7 +173,9 @@ public class ELOracle {
 		return engineForT.getSubClassAxiom(sub, sup);
 	}
 	
-	public   OWLClassExpression unsaturateRight(OWLAxiom ax) throws Exception {
+	
+
+	public OWLClassExpression unsaturateRight(OWLAxiom ax) throws Exception {
 		OWLClassExpression left = ((OWLSubClassOfAxiom) ax).getSubClass();
 		OWLClassExpression right = ((OWLSubClassOfAxiom) ax).getSuperClass();
 		ELTree tree = null;
@@ -191,10 +193,12 @@ public class ELOracle {
 
 		reasonerForH = createReasoner(ontology);
 		engineForT = new ELEngine(reasonerForH, shortFormProvider);
+		
 		for (int i = 0; i < tree.getMaxLevel(); i++) {
 			nodes = tree.getNodesOnLevel(i + 1);
 			for (ELNode nod : nodes) {
-
+				if(nod.label.size()<2)
+					continue;
 				while (!foundSomething) {
 					// size of power set
 					sizeToCheck++;
@@ -218,7 +222,7 @@ public class ELOracle {
 					// to satisfy the node
 					// and at the same time, the CI
 					conceptSet = powerSetBySize(toBuildPS, sizeToCheck);
-
+					System.out.println("stuck here !!!!");
 					// loop through concept set
 					for (Set<OWLClass> clSet : conceptSet) {
 
@@ -231,17 +235,20 @@ public class ELOracle {
 
 						// System.out.println(tree.toDescriptionString());
 						if (engineForT.entailed(
-								engineForT.parseToOWLSubClassOfAxiom((new ELTree(right))
-										.toDescriptionString(),tree.toDescriptionString() )))/*
-																	 * && !engineForH.entailed(ELQueryEngineForT.
-																	 * parseToOWLSubClassOfAxiom(
-																	 * tree.toDescriptionString(), (new
-																	 * ELTree(right)).toDescriptionString())))
-																	 */ {
+								engineForT.parseToOWLSubClassOfAxiom( (new ELTree(left)).toDescriptionString(), 
+																	 tree.toDescriptionString()
+																	 )
+												)
+							)
+						
+						{
+							
+							
 							foundSomething = true;
 							try {
-								elinterface.addHypothesis(engineForT.getSubClassAxiom(left ,
-										engineForT.parseClassExpression(tree.toDescriptionString() )));
+								elinterface.addHypothesis(engineForT.getSubClassAxiom(
+										engineForT.parseClassExpression(new ELTree(left).toDescriptionString()),
+										engineForT.parseClassExpression(tree.toDescriptionString())));
 								elinterface.hypoField.setText(elinterface.showHypothesis());
 
 							} catch (Exception e2) {
@@ -257,6 +264,8 @@ public class ELOracle {
 						}
 
 					}
+					toBuildPS = null;
+					conceptSet = null;
 
 				}
 				// reset power set size to check
@@ -275,6 +284,7 @@ public class ELOracle {
 		return ex;
 	}
 
+	
 	public   OWLClassExpression branchRight(OWLClassExpression left, OWLClassExpression right) {
 		try {
 

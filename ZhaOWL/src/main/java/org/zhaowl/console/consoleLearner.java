@@ -14,20 +14,10 @@ public class consoleLearner {
 		/*
 		 * ----- program is set to try EZ (naive teacher) by default, since console is
 		 * set for ----- large ontologies, which should not use oracle skills at all 7
-		 * parameters args[0] = ontology path args[1:6] = learner skills 
-		 * [1] = decompose left 
-		 * [2] = branch left 
-		 * [3] = unsaturate left 
-		 * [4] = decompose right 
-		 * [5] = merge right 
-		 * [6] = saturate right
+		 * parameters args[0] = ontology path args[1:6] = learner skills [1] = decompose
+		 * left [2] = branch left [3] = unsaturate left [4] = decompose right [5] =
+		 * merge right [6] = saturate right
 		 * 
-		 * Oracle skills as follows
-		 * [7] = merge left
-		 * [8] = saturate left
-		 * [9] = branch right
-		 * [10] = unsaturate right
-		 *
 		 * ----- OUTPUT aside from some console metrics (number of equivalence queries
 		 * and some other info) a new ontology file will be created in the folder of
 		 * ontology input this new ontology will be the hypothesis learned by the
@@ -36,16 +26,33 @@ public class consoleLearner {
 		 */
 		
 		consoleLearner maker = new consoleLearner();  
+		//maker.setValues(args);
 		maker.doIt(args);
 		
 
 	}
 	  
-	
+	public void setValues(String[] vals)
+	{
+		values[0] = vals[0];
+		values[1] = vals[1];
+		values[2] = vals[2];
+		values[3] = vals[3];
+		values[4] = vals[4];
+		values[5] = vals[5];
+		values[6] = vals[6];
+	}
 	
 	public   void doIt(String[] args) {  
 		
-		
+		/*args = new String[7];
+		args[0] = "src/main/resources/ontologies/MEDIUM/space.owl";
+		args[1] = "";
+		args[2] = "";
+		args[3] = "";
+		args[4] = "";
+		args[5] = "";
+		args[6] = "t";*/
 		try {
 			
 			Zha = new ELInterface();
