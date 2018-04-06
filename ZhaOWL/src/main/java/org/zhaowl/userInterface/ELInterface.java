@@ -561,10 +561,10 @@ public class ELInterface extends JFrame {
 			// System.out.println("Size of : " + rendering.render(axe) + "." + totalSize);
 			// System.out.println("Size of : " + inclusion + "." + totalSize);
 		}
-		System.out.println("Smallest logical axiom: " + rendering.render(smallestOne));
-		System.out.println("Size is: " + smallestSize);
-		System.out.println("Total size: " + ontSize);
-		System.out.println("Avg: " + sumSize / axiomsT.size());
+		//System.out.println("Smallest logical axiom: " + rendering.render(smallestOne));
+		//System.out.println("Size is: " + smallestSize);
+		System.out.println("Size of T: " + ontSize);
+		//System.out.println("Avg: " + sumSize / axiomsT.size());
 
 	}
 
@@ -611,10 +611,10 @@ public class ELInterface extends JFrame {
 			// System.out.println("Size of : " + rendering.render(axe) + "." + totalSize);
 			// System.out.println("Size of : " + inclusion + "." + totalSize);
 		}
-		System.out.println("Smallest logical axiom: " + rendering.render(smallestOne));
-		System.out.println("Size is: " + smallestSize);
-		System.out.println("Total size: " + ontSize);
-		System.out.println("Avg: " + sumSize / ontologyH.getAxioms().size());
+		//System.out.println("Smallest logical axiom: " + rendering.render(smallestOne));
+		//System.out.println("Size is: " + smallestSize);
+		System.out.println("Size of H: " + ontSize);
+		//System.out.println("Avg: " + sumSize / ontologyH.getAxioms().size());
 
 	}
 
@@ -1181,7 +1181,9 @@ public class ELInterface extends JFrame {
 				ontologyFolder = "src/main/resources/tmp/";
 				ontologyName = "";
 				getOntologyName();
-
+				System.out.println(ontologyName);
+				System.out.println(ontologyFolderH);
+				System.out.println(ontologyFolder);
 				{ // save ontologies
 					newFile = new File(ontologyFolder);
 					hypoFile = new File(ontologyFolderH);
